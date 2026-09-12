@@ -7,6 +7,7 @@ export function makeEvent(over: Partial<SportEvent> = {}): SportEvent {
     id: 'test:1',
     sport: 'football',
     competition: 'Premier League',
+    competitionFallback: null,
     title: 'Home vs Away',
     startsAt: new Date('2026-09-12T18:00:00Z'),
     stage: null,

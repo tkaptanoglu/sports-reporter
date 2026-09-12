@@ -44,7 +44,7 @@
 
 
 defaults:
-  unknown_competition: 2
+  unknown_competition: 1
   min_score: 0
   max_score: 10
 
@@ -107,16 +107,16 @@ sports:
 
       # --- Domestic leagues
       Premier League: 6
-      La Liga: 6
+      La Liga: 5
       Serie A: 5
       Bundesliga: 5
-      Ligue 1: 4
-      Süper Lig: 4
+      Ligue 1: 3
+      Süper Lig: 5
       Eredivisie: 3
-      Primeira Liga: 3
-      Major League Soccer: 3
-      Saudi Pro League: 3
-      EFL Championship: 3
+      Primeira Liga: 2
+      Major League Soccer: 2
+      Saudi Pro League: 2
+      EFL Championship: 4
       TFF 1. Lig: 2
       TFF 2. Lig: 1
       TFF 3. Lig: 1
@@ -178,9 +178,9 @@ sports:
       Formula 1 Practice: 1
       Formula 1 Testing: 1
       # Feeder and adjacent series
-      Formula 2: 3
-      Formula E: 3
-      Formula 3: 2
+      Formula 2: 1
+      Formula E: 1
+      Formula 3: 1
 
   # ===================================================================
   basketball:
@@ -252,65 +252,6 @@ sports:
       European Challenge Cup: 2
 
   # ===================================================================
-  cricket:
-    competitions:
-      World Test Championship Final: 8
-      ICC Cricket World Cup: 7
-      The Ashes: 7
-      ICC T20 World Cup: 6
-      ICC Champions Trophy: 5
-      Indian Premier League: 5
-      Test Match: 4
-      One Day International: 3
-      Twenty20 International: 3
-      The Hundred: 2
-      Big Bash League: 2
-      County Championship: 1
-
-  # ===================================================================
-  golf:
-    # Four rounds of strokeplay: the last day is the event.
-    stages:
-      final-round: +1
-      round-3: 0
-      round-2: -1
-      round-1: -1
-    competitions:
-      The Masters: 9
-      The Open Championship: 9
-      Ryder Cup: 9
-      U.S. Open: 8
-      PGA Championship: 8
-      The Players Championship: 6
-      Solheim Cup: 5
-      FedEx Cup Playoffs: 5
-      PGA Tour: 3
-      DP World Tour: 2
-      LIV Golf: 2
-
-  # ===================================================================
-  boxing:
-    # Boxing significance lives in the fighters, not the competition, so
-    # these describe what is at stake. Expect to hand-tune this one most.
-    competitions:
-      Undisputed World Title Fight: 9
-      World Title Fight: 7
-      Interim World Title Fight: 5
-      Title Eliminator: 4
-      Regional Title Fight: 3
-      Non-Title Fight: 2
-
-  # ===================================================================
-  mma:
-    competitions:
-      UFC Title Fight: 8
-      UFC Numbered Event: 6
-      UFC Fight Night: 3
-      Professional Fighters League: 2
-      ONE Championship: 2
-      Bellator: 2
-
-  # ===================================================================
   volleyball:
     competitions:
       Olympic Volleyball: 8
@@ -334,28 +275,6 @@ sports:
       Invitational Event: 2
 
   # ===================================================================
-  american-football:
-    competitions:
-      Super Bowl: 10
-      NFL Conference Championship: 8
-      NFL Playoffs: 7
-      College Football Playoff: 6
-      NFL: 5
-      NCAA Football: 3
-      NFL Preseason: 1
-
-  # ===================================================================
-  ice-hockey:
-    competitions:
-      Stanley Cup Final: 9
-      Olympic Ice Hockey: 8
-      NHL Playoffs: 7
-      IIHF World Championship: 6
-      NHL: 5
-      NHL Winter Classic: 4
-      KHL: 2
-
-  # ===================================================================
   motogp:
     competitions:
       MotoGP Grand Prix: 7
@@ -367,17 +286,6 @@ sports:
       MotoGP Practice: 1
 
   # ===================================================================
-  darts:
-    competitions:
-      PDC World Darts Championship: 9
-      World Matchplay: 6
-      Premier League Darts: 5
-      World Grand Prix: 5
-      Grand Slam of Darts: 5
-      World Cup of Darts: 4
-      Players Championship: 3
-
-  # ===================================================================
   ski-jumping:
     # One jump series per weekend, no bracket, so the stage layer never
     # fires here. All the signal is in which meeting it is.
@@ -386,7 +294,7 @@ sports:
       FIS Nordic World Ski Championships: 8
       Ski Flying World Championships: 8
       Four Hills Tournament: 8
-      Vierschanzentournee: 8
+      Vierschanzentournee: 10
       FIS Ski Flying World Cup: 7
       Raw Air: 6
       FIS Ski Jumping World Cup: 6

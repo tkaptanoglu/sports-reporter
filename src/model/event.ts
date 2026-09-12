@@ -10,8 +10,23 @@ export interface SportEvent {
   id: string;
   /** Which sport this belongs to. Must be a key in rules.yaml. */
   sport: SportKey;
-  /** Competition name exactly as the source reported it, not cleaned up. */
+  /**
+   * What competition this belongs to.
+   *
+   * Where a source knows exactly which competition it asked for, this is
+   * normalised to the spelling used in rules.yaml, because a deliberate
+   * mapping in one adapter beats hoping two spellings collide. Where a source
+   * returns whatever it likes, such as a whole-day feed across every league,
+   * this is the raw name and the unrated list at the foot of the report is what
+   * catches it.
+   */
   competition: string;
+  /**
+   * A broader competition name to fall back on when the specific one has no
+   * rule. "Spanish Grand Prix" falls back to "Formula 1 Grand Prix", so an
+   * unlisted race still scores like a race instead of like an unknown.
+   */
+  competitionFallback: string | null;
   /** What to show the reader, e.g. "Liverpool vs Arsenal" or "Qualifying". */
   title: string;
   /** Absolute start time. Converting to a local day happens in the report. */

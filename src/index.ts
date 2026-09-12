@@ -1,5 +1,6 @@
 import { loadConfig, unmatchedSportKeys } from './config/load.js';
 import { buildReport } from './report/build.js';
+import { renderSourceSummary } from './report/render-sources.js';
 import { renderText } from './report/render-text.js';
 import { collectEvents } from './sources/registry.js';
 import { scoreEvent } from './scoring/importance.js';
@@ -44,7 +45,20 @@ async function main(): Promise<void> {
   log.info(`Collected ${events.length} events after deduplication.`);
 
   // 5. Rate each one, and rank by what it is worth to you.
-  const scored = events.map((event) => scoreEvent(event, config));
+  let scored;
+  try {
+    scored = events.map((event) => scoreEvent(event, config));
+  } catch (error) {
+    // The sources work; the scorer does not yet. Rather than dying on the last
+    // step, show what was fetched. The competition names below are the exact
+    // strings rules.yaml has to match, so this is worth reading either way.
+    if (error instanceof Error && error.message.startsWith('Not implemented yet')) {
+      log.warn(`Cannot rank yet: ${error.message}. Showing what the sources returned instead.`);
+      console.log(renderSourceSummary(events, reportWindow.timezone));
+      return;
+    }
+    throw error;
+  }
 
   // 6. Arrange into days and print.
   const report = buildReport(scored, reportWindow, sports);

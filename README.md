@@ -13,18 +13,50 @@ you rated 9, however big its final is.
 
 ## Status
 
-Walking skeleton. It runs end to end and reports nothing, because no data
-source is implemented yet. Every stub logs `TODO` or throws a
-`Not implemented yet` naming exactly what is missing.
+Fetches real fixtures. Does not rank them yet.
 
 | Working | Stubbed |
 | --- | --- |
-| Config loading | Every data source |
-| Sport key validation | Competition name matching |
-| Timezone-aware day windows | Stage matching |
-| Source orchestration | Context flag detection |
-| Grouping, sorting, ranking | Significance scoring |
-| Terminal report | HTML report |
+| Config loading | Competition name matching |
+| Sport key validation | Stage matching |
+| Timezone-aware day windows | Context flag detection |
+| All three data sources | Significance scoring |
+| Grouping, sorting, ranking | HTML report |
+| Terminal report | |
+
+Because scoring is still a stub, a run fetches everything and then prints what
+the sources found instead of the ranked report. That listing is worth reading
+on its own: the competition names in it are the exact strings `rules.yaml` has
+to match, so it shows which rules are missing.
+
+## Sources
+
+Three of them, deliberately not overlapping. Two sources describing one fixture
+would produce two entries, because they arrive under different ids.
+
+| Source | Sports | Notes |
+| --- | --- | --- |
+| ESPN | football, tennis, basketball, Formula 1 | No key, no cap, ~30 leagues |
+| TheSportsDB | cycling, athletics, MotoGP, snooker, volleyball, handball | Free key is capped, see below |
+| Calendars | whatever you configure | iCalendar feeds, none shipped |
+
+**Ski jumping, alpine skiing and curling have no source.** Neither API carries
+them in any form, and FIS, World Curling and the EHF all publish their
+schedules as rendered HTML with no feed behind them. The calendar source exists
+for exactly this: point it at any `.ics` URL by creating `config/calendars.yaml`.
+
+    feeds:
+      - sport: alpine-skiing
+        competition: FIS Alpine Ski World Cup
+        url: https://example.org/whatever.ics
+
+**TheSportsDB's public test key returns at most three events per query** and
+starts refusing requests after a few dozen, so those six sports report a
+fraction of what is on. That is their limit, not a bug here, and it is logged
+on every run. Set `THESPORTSDB_KEY` in the environment to use your own key.
+
+ESPN also has no Turkish cup endpoint under any slug, and nothing below the
+Turkish second tier, so `TFF 2. Lig` and `TFF 3. Lig` never appear.
 
 ## Running it
 

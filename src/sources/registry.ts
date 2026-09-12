@@ -5,13 +5,18 @@ import { sourceCovers } from './types.js';
 
 import { theSportsDb } from './thesportsdb.js';
 import { espnScoreboard } from './espn.js';
-import { rssFixtures } from './rss.js';
+import { calendarFeeds } from './calendars.js';
 
 /**
- * Every source the program knows about. Order does not matter; duplicates
- * across sources are resolved by `dedupe` below.
+ * Every source the program knows about.
+ *
+ * They are deliberately not allowed to overlap. ESPN owns football, tennis,
+ * basketball and Formula 1; TheSportsDB owns the sports ESPN has nothing for;
+ * calendars own whatever you point them at. Two sources describing the same
+ * fixture would survive deduplication, because they would arrive under
+ * different ids, and you would read the same match twice.
  */
-export const sources: EventSource[] = [theSportsDb, espnScoreboard, rssFixtures];
+export const sources: EventSource[] = [espnScoreboard, theSportsDb, calendarFeeds];
 
 /**
  * Asks every relevant source in parallel and merges the results.

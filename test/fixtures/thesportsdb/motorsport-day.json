@@ -1,0 +1,69 @@
+{
+  "events": [
+    {
+      "idEvent": "2401001",
+      "strEvent": "MotoGP San Marino Grand Prix",
+      "strSport": "Motorsport",
+      "idLeague": "4407",
+      "strLeague": "MotoGP",
+      "strSeason": "2026",
+      "strTimestamp": "2026-09-13T12:00:00",
+      "dateEvent": "2026-09-13",
+      "strTime": "12:00:00",
+      "strHomeTeam": null,
+      "strAwayTeam": null,
+      "strGroup": "",
+      "intRound": "0"
+    },
+    {
+      "idEvent": "2401002",
+      "strEvent": "Moto2 San Marino Grand Prix",
+      "strSport": "Motorsport",
+      "idLeague": "4462",
+      "strLeague": "Moto2",
+      "strSeason": "2026",
+      "strTimestamp": "2026-09-13T10:20:00",
+      "dateEvent": "2026-09-13",
+      "strTime": "10:20:00",
+      "strGroup": "",
+      "intRound": "0"
+    },
+    {
+      "idEvent": "2401003",
+      "strEvent": "DTM Race 2 Hockenheim",
+      "strSport": "Motorsport",
+      "idLeague": "4432",
+      "strLeague": "DTM",
+      "strSeason": "2026",
+      "strTimestamp": "2026-09-13T13:30:00",
+      "dateEvent": "2026-09-13",
+      "strTime": "13:30:00",
+      "strGroup": "",
+      "intRound": "0"
+    },
+    {
+      "idEvent": "2401004",
+      "strEvent": "Rally Chile",
+      "strSport": "Motorsport",
+      "idLeague": "4370",
+      "strLeague": "WRC",
+      "strSeason": "2026",
+      "strTimestamp": null,
+      "dateEvent": "2026-09-13",
+      "strTime": null,
+      "strGroup": "",
+      "intRound": "0"
+    },
+    {
+      "idEvent": "2401005",
+      "strEvent": "Undated placeholder",
+      "strSport": "Motorsport",
+      "strLeague": "MotoGP",
+      "strTimestamp": null,
+      "dateEvent": null,
+      "strTime": null,
+      "strGroup": "",
+      "intRound": "0"
+    }
+  ]
+}
