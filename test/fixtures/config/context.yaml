@@ -16,3 +16,7 @@ deciders:
 
   formula1:
     - [Abu Dhabi Grand Prix]
+
+decisive_qualifying:
+  formula1:
+    - [Monaco Grand Prix, Qualifying]

@@ -28,6 +28,7 @@ export type ContextFlag =
   | 'favourite'
   | 'top-of-table'
   | 'preferred-division'
+  | 'decisive-qualifying'
   | 'record-attempt'
   | 'dead-rubber'
   | 'exhibition'
@@ -152,6 +153,12 @@ export interface ContextConfig {
   rivalries?: Record<SportKey, string[][]>;
   /** Sport key to rules. Every phrase in a rule must appear in the event. */
   deciders?: Record<SportKey, string[][]>;
+  /**
+   * Qualifying sessions that largely settle the race that follows, at venues
+   * where passing is so hard that grid position is most of the result. Same
+   * shape as `deciders`: every phrase in a rule must appear in the event.
+   */
+  decisive_qualifying?: Record<SportKey, string[][]>;
 }
 
 /** Every config file, parsed. */

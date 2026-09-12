@@ -26,8 +26,8 @@ Works end to end. Fetches, scores, ranks and prints.
 | Significance and ranking | |
 | Terminal summary and HTML report | |
 
-Most context flags are live. `derby` and `title-decider` come from
-`config/context.yaml`; `favourite` and `preferred-division` from your interests;
+Most context flags are live. `derby`, `title-decider` and `decisive-qualifying`
+come from `config/context.yaml`; `favourite` and `preferred-division` from your interests;
 and `top-of-table`, `relegation-battle`, `relegation-decider` and a second
 route to `title-decider` from league tables.
 
@@ -158,7 +158,7 @@ complete report rather than a broken one. `reports/` is in `.gitignore`.
 
     npm test
 
-253 tests on Node's built-in runner, no test framework dependency. Watch mode is
+279 tests on Node's built-in runner, no test framework dependency. Watch mode is
 `npm run test:watch`.
 
 They cover day windows across timezones and clock changes, config loading,
@@ -260,6 +260,24 @@ A fixture with both halves of a pair earns the `derby` flag. An event containing
 every phrase in a decider rule earns `title-decider`. Names match on whole
 words with accents folded, so "Besiktas" finds "Beşiktaş" and "Tottenham" finds
 "Tottenham Hotspur".
+
+A third section lists **decisive qualifying**: the Formula 1 circuits where
+passing is so hard that the grid is most of the race.
+
+    decisive_qualifying:
+      formula1:
+        - [Monaco Grand Prix, Qualifying]
+
+This exists because "qualifying" means two unrelated things. In tennis and
+snooker it is a separate tournament for players outside the top of the rankings,
+a genuinely weaker field, and those sports penalise it in their own stage tables.
+In Formula 1 it is the same field on the same weekend fighting title rivals for
+grid position, which is never penalised and at these circuits earns a bonus.
+
+The qualifying penalty used to live in the shared stage curve, where it reached
+every sport without its own block. That quietly penalised a World Cup qualifier
+twice and would have penalised Formula 1 qualifying from any source that put
+the word in the stage field. It now appears only where it is true.
 
 Decider rules search the competition, the title and the stage together, because
 feeds scatter the pieces. A grand tour arrives filed under "UCI World Tour" with

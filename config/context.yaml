@@ -124,3 +124,35 @@ deciders:
 
   motogp:
     - [Valencia Grand Prix]
+
+
+# ---------------------------------------------------------------------
+#  DECISIVE QUALIFYING  ->  the `decisive-qualifying` flag
+# ---------------------------------------------------------------------
+#  "Qualifying" means two unrelated things, and this section is about
+#  only one of them.
+#
+#  In tennis and snooker, qualifying is a separate tournament of players
+#  outside the top of the rankings. Those sports penalise it as a weaker
+#  field in their own stage tables in rules.yaml.
+#
+#  In Formula 1, qualifying is the same twenty-odd drivers on the same
+#  weekend, fighting their title rivals for grid position. At a circuit
+#  where passing is close to impossible, that session decides most of
+#  what happens in the race. Those circuits go here.
+#
+#  Same shape as deciders: every phrase in a rule must appear. ESPN
+#  prefixes most races with a sponsor, "Qatar Airways Azerbaijan Grand
+#  Prix", and whole-word matching finds the name inside it.
+#
+#  Which tracks belong is a judgement about the circuit, not something
+#  any feed reports. Add and remove freely.
+# ---------------------------------------------------------------------
+
+decisive_qualifying:
+  formula1:
+    - [Monaco Grand Prix, Qualifying]
+    - [Azerbaijan Grand Prix, Qualifying]
+    - [Singapore Grand Prix, Qualifying]
+    - [Hungarian Grand Prix, Qualifying]
+    - [Dutch Grand Prix, Qualifying]

@@ -75,6 +75,26 @@ describe('config/rules.yaml', () => {
     }
   });
 
+  test('the shared stage curve does not penalise qualifying', () => {
+    // A qualifying penalty encodes "weaker field". That is true of a tennis or
+    // snooker qualifying tournament and false of a Formula 1 qualifying session
+    // or a World Cup qualifier. In the shared curve it reached every sport
+    // without its own block, so it belongs only in the sports where it is true.
+    assert.equal(
+      rules.default_stages['qualifying'],
+      undefined,
+      'qualifying is back in default_stages, where it penalises sports whose qualifying is not a weaker field',
+    );
+  });
+
+  test('the sports whose qualifying really is a weaker field still penalise it', () => {
+    for (const sport of ['tennis', 'snooker']) {
+      const penalty = rules.sports[sport]?.stages?.['qualifying'];
+      if (rules.sports[sport] === undefined) continue; // you are free to drop a sport entirely
+      assert.ok(penalty !== undefined && penalty < 0, `${sport} no longer penalises its qualifiers`);
+    }
+  });
+
   test('no competition is listed twice within one sport', () => {
     // YAML silently keeps the last of two identical keys, so a duplicate would
     // otherwise vanish without complaint.

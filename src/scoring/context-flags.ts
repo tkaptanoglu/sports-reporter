@@ -42,6 +42,9 @@ export function detectContextFlags(
 
   if (isDerby(event, context.rivalries?.[event.sport] ?? [])) flags.add('derby');
   if (isDecider(event, context.deciders?.[event.sport] ?? [])) flags.add('title-decider');
+  if (isDecisiveQualifying(event, context.decisive_qualifying?.[event.sport] ?? [])) {
+    flags.add('decisive-qualifying');
+  }
   if (involvesFavourite(event, interests.favourites)) flags.add('favourite');
 
   const prefer = interests.sports[event.sport]?.prefer;
@@ -107,14 +110,44 @@ export function isDerby(event: SportEvent, rivalries: string[][]): boolean {
  * stage number only in the title.
  */
 export function isDecider(event: SportEvent, deciders: string[][]): boolean {
-  const text = [event.competition, event.title, event.stage ?? ''].map(normalise).join(' | ');
+  if (GENERIC_DECIDERS.some((phrase) => containsWords(searchText(event), phrase))) return true;
+  return matchesAnyRule(event, deciders);
+}
 
-  if (GENERIC_DECIDERS.some((phrase) => containsWords(text, phrase))) return true;
+/**
+ * Whether this is a qualifying session that largely settles the race after it.
+ *
+ * "Qualifying" means two unrelated things. In tennis and snooker it is a
+ * separate tournament for players outside the top of the rankings, and it is
+ * penalised as a weaker field in those sports' stage tables. In Formula 1 it is
+ * the same field on the same weekend, fighting for grid position against the
+ * same title rivals. At a circuit where passing is close to impossible, that
+ * session decides most of what happens on Sunday.
+ *
+ * Which circuits qualify is a judgement about the track, not something any feed
+ * reports, so it is a list in context.yaml rather than a rule in code.
+ */
+export function isDecisiveQualifying(event: SportEvent, rules: string[][]): boolean {
+  return matchesAnyRule(event, rules);
+}
 
-  return deciders.some(
+/**
+ * Whether every phrase of at least one rule appears in the event.
+ *
+ * The competition, title and stage are searched as one string, because feeds
+ * scatter the pieces: a qualifying session arrives as competition "Formula 1
+ * Qualifying" with the circuit only in the title.
+ */
+function matchesAnyRule(event: SportEvent, rules: string[][]): boolean {
+  const text = searchText(event);
+  return rules.some(
     (phrases) =>
       phrases.length > 0 && phrases.every((phrase) => containsWords(text, normalise(phrase))),
   );
+}
+
+function searchText(event: SportEvent): string {
+  return [event.competition, event.title, event.stage ?? ''].map(normalise).join(' | ');
 }
 
 /** Rivalries listed for a sport, for callers that want to inspect the list. */

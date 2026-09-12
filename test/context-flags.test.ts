@@ -2,7 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { loadConfig } from '../src/config/load.js';
-import { detectContextFlags, involvesFavourite, isDecider, isDerby } from '../src/scoring/context-flags.js';
+import { detectContextFlags, involvesFavourite, isDecider, isDecisiveQualifying, isDerby } from '../src/scoring/context-flags.js';
 import { scoreSignificance } from '../src/scoring/significance.js';
 import { scoreEvent } from '../src/scoring/importance.js';
 import { makeEvent } from './helpers.js';
@@ -118,6 +118,122 @@ describe('isDecider', () => {
 
   test('finds nothing on an ordinary fixture', () => {
     assert.equal(isDecider(makeEvent({ title: 'Liverpool vs Fulham' }), []), false);
+  });
+});
+
+describe('isDecisiveQualifying', () => {
+  const rules = config.context.decisive_qualifying?.['formula1'] ?? [];
+
+  const session = (title: string, competition = 'Formula 1 Qualifying') =>
+    makeEvent({ sport: 'formula1', competition, title, participants: [] });
+
+  test('flags qualifying at a circuit where grid position is most of the race', () => {
+    assert.equal(isDecisiveQualifying(session('Monaco Grand Prix, Qualifying'), rules), true);
+  });
+
+  test('finds the circuit behind a sponsor prefix', () => {
+    // ESPN writes "Qatar Airways Azerbaijan Grand Prix". The rule says
+    // "Azerbaijan Grand Prix" and whole-word matching finds it inside.
+    assert.equal(
+      isDecisiveQualifying(session('Tag Heuer Monaco Grand Prix, Qualifying'), rules),
+      true,
+    );
+  });
+
+  test('leaves the race itself alone, since it is already scored as the race', () => {
+    const race = session('Monaco Grand Prix', 'Monaco Grand Prix');
+    assert.equal(isDecisiveQualifying(race, rules), false);
+  });
+
+  test('leaves practice alone, even at Monaco', () => {
+    const practice = session('Monaco Grand Prix, Practice', 'Formula 1 Practice');
+    assert.equal(isDecisiveQualifying(practice, rules), false);
+  });
+
+  test('leaves qualifying alone at a circuit that is not on the list', () => {
+    // Monza has long straights and overtaking is routine, so its grid matters
+    // no more than usual.
+    assert.equal(isDecisiveQualifying(session('Italian Grand Prix, Qualifying'), rules), false);
+  });
+});
+
+describe('qualifying means different things in different sports', () => {
+  // A tennis or snooker qualifier is a separate tournament of players outside
+  // the top of the rankings. A Formula 1 qualifier is the same field on the
+  // same weekend fighting for grid position. The first is a weaker field and
+  // is penalised as one; the second is not, and at some circuits it matters
+  // almost as much as the race.
+  const f1 = (title: string, competition = 'Formula 1 Qualifying') =>
+    makeEvent({ sport: 'formula1', competition, title, participants: [] });
+
+  test('Formula 1 qualifying at Monaco outscores qualifying at a circuit where passing is easy', () => {
+    const monaco = scoreSignificance(f1('Monaco Grand Prix, Qualifying'), real);
+    const monza = scoreSignificance(f1('Italian Grand Prix, Qualifying'), real);
+
+    assert.ok(monaco.significance > monza.significance);
+    assert.deepEqual(monaco.breakdown.flags.map((f) => f.flag), ['decisive-qualifying']);
+  });
+
+  test('Monaco qualifying still sits below the Monaco race', () => {
+    const qualifying = scoreSignificance(f1('Monaco Grand Prix, Qualifying'), real);
+    const race = scoreSignificance(
+      makeEvent({ sport: 'formula1', competition: 'Monaco Grand Prix', title: 'Monaco Grand Prix', participants: [] }),
+      real,
+    );
+
+    assert.ok(race.significance > qualifying.significance);
+  });
+
+  test('Formula 1 qualifying is never penalised as a weaker field', () => {
+    // Even arriving through the stage field, which a different source could
+    // easily do, qualifying in Formula 1 takes nothing off.
+    const viaStage = scoreSignificance(
+      makeEvent({ sport: 'formula1', competition: 'Formula 1 Grand Prix', stage: 'Qualifying', participants: [] }),
+      real,
+    );
+
+    assert.equal(viaStage.breakdown.stageKey, null);
+    assert.equal(viaStage.breakdown.stageAdjustment, 0);
+  });
+
+  test('a World Cup qualifier is not penalised twice', () => {
+    // Its competition is already rated as a qualifying competition. A stage
+    // penalty on top counted the same fact twice and put Turkey against Spain
+    // at a significance of 1.
+    const result = scoreSignificance(
+      makeEvent({ competition: 'FIFA World Cup Qualifying', stage: 'Qualifying', title: 'Turkey vs Spain' }),
+      real,
+    );
+
+    assert.equal(result.breakdown.stageAdjustment, 0);
+  });
+
+  test('a tennis qualifier is still penalised, because there it is a weaker field', () => {
+    const result = scoreSignificance(
+      makeEvent({ sport: 'tennis', competition: 'US Open', stage: 'Qualifying 1st Round', participants: [] }),
+      real,
+    );
+
+    assert.equal(result.breakdown.stageKey, 'qualifying');
+    assert.ok(result.breakdown.stageAdjustment < 0);
+  });
+
+  test('a snooker qualifier is still penalised, and its main draw keeps its knockout curve', () => {
+    const qualifier = scoreSignificance(
+      makeEvent({ sport: 'snooker', competition: 'Northern Ireland Open Qual', stage: 'Qualifying Round 1', participants: [] }),
+      real,
+    );
+    const final = scoreSignificance(
+      makeEvent({ sport: 'snooker', competition: 'Northern Ireland Open', stage: 'Final', participants: [] }),
+      real,
+    );
+
+    assert.equal(qualifier.breakdown.stageKey, 'qualifying');
+    assert.ok(qualifier.breakdown.stageAdjustment < 0);
+    // Snooker now declares its own stages block, which replaces the shared
+    // curve. The final bonus has to have survived that.
+    assert.equal(final.breakdown.stageKey, 'final');
+    assert.ok(final.breakdown.stageAdjustment > 0);
   });
 });
 

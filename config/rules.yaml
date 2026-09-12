@@ -60,7 +60,6 @@ default_stages:
   round-robin: -1
   regular-season: 0
   playoff: +1
-  qualifying: -3
   friendly: -3
 
 
@@ -85,6 +84,9 @@ context:
   favourite: +2
   # The side of a sport you said you lean towards, without excluding the other.
   preferred-division: +2
+  # Qualifying at a venue where grid position is most of the race. Lists
+  # the venues in context.yaml.
+  decisive-qualifying: +2
   record-attempt: +1
   dead-rubber: -2
   exhibition: -3
@@ -278,6 +280,16 @@ sports:
 
   # ===================================================================
   snooker:
+    # Qualifying here is a separate tournament of players outside the top
+    # of the rankings, so it is penalised as a weaker field. Declaring this
+    # block replaces the shared curve entirely, which is why the knockout
+    # rounds are repeated here rather than inherited.
+    stages:
+      final: +2
+      semi-final: +1
+      quarter-final: 0
+      round-of-16: -1
+      qualifying: -3
     competitions:
       World Snooker Championship: 9
       UK Championship: 7
