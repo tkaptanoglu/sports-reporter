@@ -25,6 +25,8 @@ export type ContextFlag =
   | 'relegation-decider'
   | 'derby'
   | 'favourite'
+  | 'top-of-table'
+  | 'preferred-division'
   | 'record-attempt'
   | 'dead-rubber'
   | 'exhibition'
@@ -42,6 +44,11 @@ export interface Favourite {
   name: string;
   /** Confines it to one sport. Absent means every sport you follow. */
   sport?: SportKey;
+  /**
+   * Confines it to one side of a sport that runs parallel calendars, so the
+   * women's national team can be a favourite while the men's is not.
+   */
+  division?: Division;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,6 +82,14 @@ export interface SportInterest {
    * leagues whose name gives nothing away, such as Sultanlar Ligi.
    */
   also?: string[];
+  /**
+   * Lean towards this side without excluding the other.
+   *
+   * Where `only` throws half a sport away, this keeps everything and gives the
+   * side you prefer a bonus. An Olympic men's final still reaches you; it just
+   * sits below the women's one.
+   */
+  prefer?: Division;
 }
 
 /** interests.yaml exactly as written: bare forms allowed throughout. */

@@ -73,8 +73,12 @@ context:
   promotion-decider: +1
   relegation-decider: +1
   derby: +1
+  # Both sides high in the table, a quarter of the season in or later.
+  top-of-table: +1
   # Teams and athletes you named in interests.yaml.
   favourite: +2
+  # The side of a sport you said you lean towards, without excluding the other.
+  preferred-division: +2
   record-attempt: +1
   dead-rubber: -2
   exhibition: -3

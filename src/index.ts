@@ -6,6 +6,7 @@ import { writeHtmlReport } from './report/render-html.js';
 import { collectEvents } from './sources/registry.js';
 import { scoreEvent } from './scoring/importance.js';
 import { siftByDivision } from './scoring/division.js';
+import { fetchTables } from './standings/espn.js';
 import { buildWindow } from './util/days.js';
 import { log } from './util/log.js';
 
@@ -59,10 +60,14 @@ async function main(): Promise<void> {
     );
   }
 
-  // 6. Rate each one, and rank by what it is worth to you.
+  // 6. Fetch the league tables behind this week's fixtures, so first against
+  //    second can read differently from fourteenth against fifteenth.
+  const tables = await fetchTables([...new Set(kept.map((event) => event.competition))]);
+
+  // 7. Rate each one, and rank by what it is worth to you.
   let scored;
   try {
-    scored = kept.map((event) => scoreEvent(event, config));
+    scored = kept.map((event) => scoreEvent(event, config, tables));
   } catch (error) {
     // The sources work; the scorer does not yet. Rather than dying on the last
     // step, show what was fetched. The competition names below are the exact
@@ -75,7 +80,7 @@ async function main(): Promise<void> {
     throw error;
   }
 
-  // 7. Arrange into days, print a summary, and write the page you actually read.
+  // 8. Arrange into days, print a summary, and write the page you actually read.
   const report = buildReport(scored, reportWindow, sports);
   console.log(renderText(report));
 

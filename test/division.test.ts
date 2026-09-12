@@ -82,6 +82,23 @@ describe('wanted', () => {
   });
 });
 
+describe('preferring a division without excluding the other', () => {
+  // `only` throws half a sport away. `prefer` keeps everything and gives one
+  // side a bonus, so a men's Olympic final still reaches you below the
+  // women's one.
+  const leaning: SportInterest = { interest: 7, prefer: 'women' };
+
+  test('keeps both sides, unlike only', () => {
+    const mens = makeEvent({ competition: 'Mens European Volleyball Championship' });
+    assert.equal(wanted(mens, leaning), true);
+    assert.equal(wanted(mens, { interest: 7, only: 'women' }), false);
+  });
+
+  test('keeps an unmarked competition too', () => {
+    assert.equal(wanted(makeEvent({ competition: 'German 1. Bundesliga' }), leaning), true);
+  });
+});
+
 describe('siftByDivision', () => {
   const events = [
     makeEvent({ id: '1', sport: 'volleyball', competition: 'Womens European Volleyball Championship' }),

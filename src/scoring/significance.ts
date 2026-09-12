@@ -3,6 +3,7 @@ import { matchCompetition } from './match-competition.js';
 import { matchStage } from './stage.js';
 import type { LoadedConfig } from '../config/types.js';
 import type { ScoreBreakdown, SportEvent } from '../model/event.js';
+import type { Tables } from '../standings/types.js';
 
 export interface SignificanceResult {
   /** Clamped to defaults.min_score..defaults.max_score. */
@@ -20,7 +21,11 @@ export interface SignificanceResult {
  * output you will argue with, so it returns a full breakdown rather than a bare
  * number. Without the breakdown, tuning rules.yaml is guesswork.
  */
-export function scoreSignificance(event: SportEvent, config: LoadedConfig): SignificanceResult {
+export function scoreSignificance(
+  event: SportEvent,
+  config: LoadedConfig,
+  tables: Tables = new Map(),
+): SignificanceResult {
   const { rules } = config;
   const sportRules = rules.sports[event.sport];
   if (sportRules === undefined) {
@@ -44,7 +49,7 @@ export function scoreSignificance(event: SportEvent, config: LoadedConfig): Sign
   const stage = matchStage(event.sport, event.stage, rules);
   const stageAdjustment = stage?.adjustment ?? 0;
 
-  const flags = detectContextFlags(event, config).map((flag) => ({
+  const flags = detectContextFlags(event, config, tables).map((flag) => ({
     flag,
     adjustment: rules.context[flag] ?? 0,
   }));

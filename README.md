@@ -25,13 +25,36 @@ Works end to end. Fetches, scores, ranks and prints.
 | Significance and ranking | |
 | Terminal summary and HTML report | |
 
-Two of the context flags are live: `derby` and `title-decider`, both driven by
-`config/context.yaml`. The rest stay unraised on purpose. A relegation
-six-pointer or a live title race needs league standings and the fixtures left
-to play, which means a standings source and real arithmetic, not a list. Until
-a flag can be proved it is never claimed, because a wrongly applied one would
-push a meaningless fixture to the top of your Saturday with nothing to explain
-why.
+Most context flags are live. `derby` and `title-decider` come from
+`config/context.yaml`; `favourite` and `preferred-division` from your interests;
+and `top-of-table`, `relegation-decider` and a second route to `title-decider`
+from league tables.
+
+Only `dead-rubber` remains, and it stays out on purpose. Proving nothing is at
+stake needs per-team arithmetic across every fixture left to play, not just a
+table. Until a flag can be proved it is never claimed, because a wrongly applied
+one would push a meaningless fixture to the top of your Saturday with nothing to
+explain why.
+
+## Standings
+
+League tables come from ESPN, fetched once per run and only for competitions
+that appear in that week's fixtures. A cup or an individual sport has no table
+and is never asked about.
+
+Everything read from a table is gated on how far through the season it is,
+because a table in August is noise:
+
+| Flag | Fires from | Condition |
+| --- | --- | --- |
+| top-of-table | a quarter in | both sides in the top 30% |
+| relegation-decider | halfway | both sides in the bottom 20% |
+| title-decider | three quarters in | both sides in the top two |
+
+Both sides always have to qualify. A leader playing a straggler is just a
+fixture. Season length is worked out from the size of the table rather than read
+from the feed, which does not carry it, so it assumes a league plays everyone
+home and away.
 
 ## Scoring
 
@@ -153,11 +176,19 @@ Two files in `config/`, both YAML with comments explaining themselves.
 timezone. It is deliberately not tracked in git, so it never leaves your
 machine. Copy `interests.example.yaml` to start one.
 
-Most sports run two parallel calendars, and you may follow only one. Swap the
-bare rating for the long form to take just that half:
+Most sports run two parallel calendars, and you may not care equally about
+both. There are two ways to say so. `prefer` keeps everything and gives one side
+a bonus, so a men's Olympic final still reaches you below the women's one:
 
     volleyball:
       interest: 7
+      prefer: women
+
+`only` is the stricter form. It throws the other side away entirely, along with
+anything that does not say which it is, and `also` names the exceptions:
+
+    handball:
+      interest: 4
       only: women
       also:
         - Sultanlar Ligi
@@ -171,8 +202,16 @@ they turn up:
       - name: Amed
         sport: football
 
-A bare name applies across every sport you follow; adding `sport:` pins one to
-a single sport, for a club name that means different things in each. Any event
+A bare name applies across every sport you follow. Adding `sport:` pins one to
+a single sport, for a club name that means different things in each, and adding
+`division:` pins it to one side of that sport:
+
+    - name: Turkey
+      sport: volleyball
+      division: women
+
+That last part matters because every feed names national sides by country
+alone. Without it, favouriting the women's team would boost the men's too. Any event
 involving a favourite earns the `favourite` flag, whose size lives in
 `rules.yaml` beside the other context adjustments. Names match on whole words
 with accents folded and apostrophes ignored, so "Besiktas" finds Beşiktaş,

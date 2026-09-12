@@ -1,6 +1,7 @@
 import { scoreSignificance } from './significance.js';
 import type { LoadedConfig } from '../config/types.js';
 import type { ScoredEvent, SportEvent } from '../model/event.js';
+import type { Tables } from '../standings/types.js';
 
 /**
  * Attaches both ratings to an event.
@@ -11,7 +12,11 @@ import type { ScoredEvent, SportEvent } from '../model/event.js';
  * never crowd out a sport you rated 9, no matter how big its final is, which is
  * the behaviour you asked for.
  */
-export function scoreEvent(event: SportEvent, config: LoadedConfig): ScoredEvent {
+export function scoreEvent(
+  event: SportEvent,
+  config: LoadedConfig,
+  tables: Tables = new Map(),
+): ScoredEvent {
   const preference = config.interests.sports[event.sport];
 
   if (preference === undefined) {
@@ -21,7 +26,7 @@ export function scoreEvent(event: SportEvent, config: LoadedConfig): ScoredEvent
     );
   }
 
-  const { significance, breakdown } = scoreSignificance(event, config);
+  const { significance, breakdown } = scoreSignificance(event, config, tables);
 
   return {
     ...event,

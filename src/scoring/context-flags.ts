@@ -1,6 +1,9 @@
+import { divisionOf } from './division.js';
+import { detectStandingsFlags } from './standings-flags.js';
 import { containsWords, normalise } from './text.js';
 import type { ContextConfig, ContextFlag, Favourite, LoadedConfig, SportKey } from '../config/types.js';
 import type { SportEvent } from '../model/event.js';
+import type { Tables } from '../standings/types.js';
 
 /**
  * Works out which context flags an event genuinely earns.
@@ -11,9 +14,10 @@ import type { SportEvent } from '../model/event.js';
  * history, and which stage settles a grand tour is a matter of the calendar.
  * Neither arrives in a feed, so both are lists a person maintains.
  *
- * The flags still absent all need league standings and the fixtures left to
- * play: title races in progress, relegation six-pointers, dead rubbers. Those
- * need a standings source and real arithmetic, not a list.
+ * League position now arrives too, from a standings source, which is what lets
+ * first against second read differently from fourteenth against fifteenth. The
+ * one flag still absent is the dead rubber: proving nothing is at stake needs
+ * per-team arithmetic over every fixture left, not just a table.
  */
 
 /**
@@ -28,15 +32,29 @@ const GENERIC_DECIDERS = [
   'championship decider',
 ];
 
-export function detectContextFlags(event: SportEvent, config: LoadedConfig): ContextFlag[] {
+export function detectContextFlags(
+  event: SportEvent,
+  config: LoadedConfig,
+  tables: Tables = new Map(),
+): ContextFlag[] {
   const { context, interests } = config;
-  const flags: ContextFlag[] = [];
+  const flags = new Set<ContextFlag>();
 
-  if (isDerby(event, context.rivalries?.[event.sport] ?? [])) flags.push('derby');
-  if (isDecider(event, context.deciders?.[event.sport] ?? [])) flags.push('title-decider');
-  if (involvesFavourite(event, interests.favourites)) flags.push('favourite');
+  if (isDerby(event, context.rivalries?.[event.sport] ?? [])) flags.add('derby');
+  if (isDecider(event, context.deciders?.[event.sport] ?? [])) flags.add('title-decider');
+  if (involvesFavourite(event, interests.favourites)) flags.add('favourite');
 
-  return flags;
+  const prefer = interests.sports[event.sport]?.prefer;
+  if (prefer !== undefined && divisionOf(event) === prefer) flags.add('preferred-division');
+
+  // A set, because a title decider can be reached two ways: from the calendar
+  // via context.yaml, and from the table via the standings. Either is enough
+  // and both together must not count twice.
+  for (const flag of detectStandingsFlags(event, tables.get(event.competition))) {
+    flags.add(flag);
+  }
+
+  return [...flags];
 }
 
 /**
@@ -53,6 +71,10 @@ export function involvesFavourite(event: SportEvent, favourites: Favourite[]): b
 
   return favourites.some((favourite) => {
     if (favourite.sport !== undefined && favourite.sport !== event.sport) return false;
+    // A favourite pinned to a division must be on that side of the sport. This
+    // is what separates a national women's team from the men's team of the same
+    // name, which every feed calls simply by the country.
+    if (favourite.division !== undefined && divisionOf(event) !== favourite.division) return false;
     return containsWords(text, normalise(favourite.name));
   });
 }

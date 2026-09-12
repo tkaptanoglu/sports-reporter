@@ -160,6 +160,37 @@ describe('involvesFavourite', () => {
     assert.equal(involvesFavourite(makeEvent({ sport: 'football', title: 'Amed SFK vs Genclerbirligi' }), favourites), true);
   });
 
+  test('separates a national team from the men’s side of the same name', () => {
+    // Every feed names national sides by country alone. Without the division
+    // this would boost both teams, which is the opposite of what was asked.
+    const turkey = [{ name: 'Turkey', sport: 'volleyball', division: 'women' as const }];
+
+    const womens = makeEvent({
+      sport: 'volleyball',
+      competition: 'Womens European Volleyball Championship',
+      participants: ['Turkey Volleyball', 'Italy Volleyball'],
+    });
+    const mens = makeEvent({
+      sport: 'volleyball',
+      competition: 'Mens European Volleyball Championship',
+      participants: ['Turkey Volleyball', 'Italy Volleyball'],
+    });
+
+    assert.equal(involvesFavourite(womens, turkey), true);
+    assert.equal(involvesFavourite(mens, turkey), false);
+  });
+
+  test('an unmarked competition is not assumed to be the division you pinned', () => {
+    const turkey = [{ name: 'Turkey', sport: 'volleyball', division: 'women' as const }];
+    const unclear = makeEvent({
+      sport: 'volleyball',
+      competition: 'Nations League',
+      participants: ['Turkey Volleyball', 'Italy Volleyball'],
+    });
+
+    assert.equal(involvesFavourite(unclear, turkey), false);
+  });
+
   test('finds nothing when you have named no favourites', () => {
     assert.equal(involvesFavourite(makeEvent({ participants: ['Ronnie O’Sullivan'] }), []), false);
   });
