@@ -20,6 +20,26 @@ describe('the coverage table', () => {
     }
   });
 
+  test('asks for MotoGP by league rather than sweeping all of motorsport', () => {
+    // A day of "Motorsport" returns three events under the free key, and on a
+    // normal weekend those three are DTM, NASCAR and a rally, with the MotoGP
+    // race nowhere among them. Asking for the league by id cannot be crowded
+    // out, and costs one request instead of seven.
+    const motogp = COVERAGE.find((c) => c.sport === 'motogp');
+    assert.ok(motogp);
+    assert.deepEqual(motogp.leagues, ['4407']);
+  });
+
+  test('sweeps by day for the sports that genuinely span many leagues', () => {
+    // Cycling and the rest have no single league worth naming, so the day
+    // query is right for them however wasteful it looks next to MotoGP.
+    for (const sport of ['cycling', 'athletics', 'volleyball', 'handball']) {
+      const coverage = COVERAGE.find((c) => c.sport === sport);
+      assert.ok(coverage);
+      assert.equal(coverage.leagues, undefined, `${sport} should not name leagues`);
+    }
+  });
+
   test('leaves out the winter sports it has no data for', () => {
     const claimed = COVERAGE.map((c) => c.sport);
     for (const sport of ['alpine-skiing', 'curling']) {

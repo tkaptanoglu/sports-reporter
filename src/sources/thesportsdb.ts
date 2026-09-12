@@ -28,6 +28,17 @@ export interface Coverage {
   sport: SportKey;
   /** Their name for the sport, used as the `s` query parameter. */
   theirSport: string;
+  /**
+   * Query these league ids directly instead of sweeping the whole sport day by
+   * day.
+   *
+   * Worth it whenever one series is buried inside a sport that holds many. A
+   * day of "Motorsport" returns three events under the free key, and on a
+   * normal weekend those three are DTM, NASCAR and a rally, with the MotoGP
+   * race nowhere in them. Asking for the league by id returns only that league,
+   * in one request rather than seven.
+   */
+  leagues?: string[];
   /** Keeps only leagues matching this, for sports they lump together. */
   leagueFilter?: RegExp;
   /** Tried when the league name itself has no rule. */
@@ -45,8 +56,15 @@ export const COVERAGE: Coverage[] = [
   { sport: 'athletics', theirSport: 'Athletics', fallback: 'World Athletics Continental Tour' },
   { sport: 'volleyball', theirSport: 'Volleyball' },
   { sport: 'handball', theirSport: 'Handball' },
-  // They file every series under one sport, so MotoGP needs filtering out of it.
-  { sport: 'motogp', theirSport: 'Motorsport', leagueFilter: /moto\s?(gp|2|3)/i, fallback: 'MotoGP Grand Prix' },
+  // 4407 is MotoGP. Add the Moto2 and Moto3 ids here if you want the support
+  // races too; the filter below keeps anything else out either way.
+  {
+    sport: 'motogp',
+    theirSport: 'Motorsport',
+    leagues: ['4407'],
+    leagueFilter: /moto\s?(gp|2|3)/i,
+    fallback: 'MotoGP Grand Prix',
+  },
 ];
 
 interface SportsDbEvent {
@@ -128,14 +146,27 @@ export const theSportsDb: EventSource = {
       );
     }
 
-    // One request per sport per day. Kept to two at a time because the free
-    // tier starts answering with HTML error pages well before it answers 429.
-    const jobs = coverages.flatMap((coverage) =>
-      datesIn(request).map((date) => ({ coverage, date })),
+    // A sport naming its leagues is asked about those and nothing else. Every
+    // other sport is swept day by day. Kept to two requests at a time because
+    // the free tier answers with HTML error pages well before it answers 429.
+    interface Job {
+      coverage: Coverage;
+      /** Exactly one of these is set. */
+      date?: string;
+      league?: string;
+    }
+
+    const jobs: Job[] = coverages.flatMap((coverage) =>
+      coverage.leagues === undefined
+        ? datesIn(request).map((date): Job => ({ coverage, date }))
+        : coverage.leagues.map((league): Job => ({ coverage, league })),
     );
 
-    const results = await mapWithLimit(jobs, 2, async ({ coverage, date }) => {
-      const url = `${BASE}/${key}/eventsday.php?d=${date}&s=${encodeURIComponent(coverage.theirSport)}`;
+    const results = await mapWithLimit(jobs, 2, async ({ coverage, date, league }) => {
+      const url =
+        league === undefined
+          ? `${BASE}/${key}/eventsday.php?d=${date ?? ''}&s=${encodeURIComponent(coverage.theirSport)}`
+          : `${BASE}/${key}/eventsnextleague.php?id=${league}`;
       return parseDay(await fetchJson<SportsDbDay>(url), coverage);
     });
 
