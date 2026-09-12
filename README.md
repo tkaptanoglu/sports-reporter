@@ -13,21 +13,42 @@ you rated 9, however big its final is.
 
 ## Status
 
-Fetches real fixtures. Does not rank them yet.
+Works end to end. Fetches, scores, ranks and prints.
 
 | Working | Stubbed |
 | --- | --- |
-| Config loading | Competition name matching |
-| Sport key validation | Stage matching |
-| Timezone-aware day windows | Context flag detection |
-| All three data sources | Significance scoring |
-| Grouping, sorting, ranking | HTML report |
+| Config loading and validation | Context flag detection |
+| Timezone-aware day windows | HTML report |
+| All three data sources | |
+| Competition and stage matching | |
+| Significance and ranking | |
 | Terminal report | |
 
-Because scoring is still a stub, a run fetches everything and then prints what
-the sources found instead of the ranked report. That listing is worth reading
-on its own: the competition names in it are the exact strings `rules.yaml` has
-to match, so it shows which rules are missing.
+Context flags are stubbed deliberately rather than half-written. Detecting a
+title decider needs league standings and the fixtures left to play; a derby
+needs a rivalry list. Until it can prove a flag from the data it claims none,
+because a wrongly applied one would push a meaningless fixture to the top of
+your Saturday with nothing to explain why.
+
+## Scoring
+
+Three layers, then a clamp to 0..10.
+
+    significance = base + stage adjustment + context adjustments
+    importance   = your interest in the sport x that significance
+
+Competition names are matched on whole words, accent-insensitive, longest rule
+first. That is what lets one rule for `Monaco Grand Prix` survive a feed calling
+it "Tag Heuer Monaco Grand Prix", lets `Süper Lig` match a feed writing "Turkish
+Super Lig", and stops the `NBA` rule claiming a WNBA fixture.
+
+Stage text is matched against a synonym table, and only against the stage keys
+the sport actually declares. "Round 1" therefore means the first round of a golf
+tournament in one sport and an early round of a draw in another.
+
+Every scored event carries a full breakdown: which rule matched, the base, which
+stage fired, each flag, and whether the total was clamped. Without it, tuning
+`rules.yaml` would be guesswork.
 
 ## Sources
 

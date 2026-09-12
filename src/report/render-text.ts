@@ -33,7 +33,11 @@ export function renderText(report: Report): string {
   }
 
   if (report.emptySports.length > 0) {
-    out.push('  No events found for these sports. Most likely out of season:');
+    // Naming a single cause here would be a guess. Out of season is the usual
+    // one, but a throttled or failed source looks identical from down here, and
+    // three sports have no source at all. The log above says which happened.
+    out.push('  Nothing found for these sports. Out of season, no source for them,');
+    out.push('  or a source failed. The log above will say which:');
     out.push(`    ${report.emptySports.join(', ')}`);
     out.push('');
   }

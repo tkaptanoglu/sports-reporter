@@ -48,7 +48,7 @@ describe('renderText', () => {
   test('explains silence rather than leaving it looking like a bug', () => {
     const text = renderText(buildReport([], window(), ['curling', 'ski-jumping']));
 
-    assert.match(text, /out of season/);
+    assert.match(text, /Out of season/);
     assert.match(text, /curling, ski-jumping/);
   });
 

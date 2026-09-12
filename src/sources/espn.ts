@@ -238,8 +238,15 @@ export function parseTennisScoreboard(
       new Date(Math.min(end.getTime(), request.to.getTime() - 1)),
       request.timezone,
     )) {
-      const round = roundsByDay.get(day.key) ?? null;
+      const play = roundsByDay.get(day.key);
+      const round = play?.round ?? null;
       const name = tournament.name ?? 'Tournament';
+
+      // Local day boundaries and the window's absolute edges do not line up
+      // when the reader is ahead of UTC, so the last day can fall just outside.
+      // The collector would drop it anyway; better not to invent it.
+      const startsAt = play?.earliest ?? midday(day.start, request.timezone);
+      if (startsAt < request.from || startsAt >= request.to) continue;
 
       events.push({
         id: `espn:${tournament.id}:${day.key}`,
@@ -249,7 +256,7 @@ export function parseTennisScoreboard(
         // bottom tour tier rather than scoring as a complete unknown.
         competitionFallback: tournament.major === true ? null : (league.fallback ?? null),
         title: round === null ? name : `${name}, ${round}`,
-        startsAt: day.start,
+        startsAt,
         stage: round,
         participants: [],
         source: 'espn',
@@ -350,9 +357,16 @@ function sessionLabel(kind: string): string {
   return kind.replace(/^Formula 1 /, '');
 }
 
-/** The furthest-advanced round being played on each day of a tennis draw. */
-function roundsPerDay(tournament: EspnEvent, timezone: string): Map<string, string> {
-  const best = new Map<string, { rank: number; name: string }>();
+interface DayOfPlay {
+  /** The furthest-advanced round being played that day. */
+  round: string;
+  /** When the first match of the day starts. */
+  earliest: Date;
+}
+
+/** What is being played on each day of a tennis draw, read from the matches. */
+function roundsPerDay(tournament: EspnEvent, timezone: string): Map<string, DayOfPlay> {
+  const best = new Map<string, DayOfPlay & { rank: number }>();
 
   for (const grouping of tournament.groupings ?? []) {
     for (const match of grouping.competitions ?? []) {
@@ -363,11 +377,25 @@ function roundsPerDay(tournament: EspnEvent, timezone: string): Map<string, stri
       const key = DateTime.fromJSDate(when).setZone(timezone).toFormat('yyyy-MM-dd');
       const rank = Number(match.round?.id ?? 0);
       const current = best.get(key);
-      if (current === undefined || rank > current.rank) best.set(key, { rank, name });
+
+      if (current === undefined) {
+        best.set(key, { rank, round: name, earliest: when });
+        continue;
+      }
+      if (rank > current.rank) {
+        current.rank = rank;
+        current.round = name;
+      }
+      if (when < current.earliest) current.earliest = when;
     }
   }
 
-  return new Map([...best].map(([key, value]) => [key, value.name]));
+  return best;
+}
+
+/** Local midday on the same calendar day, for an event with no known time. */
+function midday(dayStart: Date, timezone: string): Date {
+  return DateTime.fromJSDate(dayStart).setZone(timezone).startOf('day').plus({ hours: 12 }).toJSDate();
 }
 
 /** Local midnights from `from` to `to` inclusive. */

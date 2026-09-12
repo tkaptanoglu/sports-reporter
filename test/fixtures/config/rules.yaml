@@ -1,4 +1,8 @@
-# Fixture only. Two sports, one of which overrides the default stage curve.
+# Fixture only.
+#
+# Deliberately small, but it carries one example of every matching hazard the
+# real table contains, so the matcher tests do not depend on which sports the
+# user happens to keep in config/rules.yaml. That file is theirs to edit.
 defaults:
   unknown_competition: 2
   min_score: 0
@@ -7,6 +11,7 @@ defaults:
 default_stages:
   final: +2
   semi-final: +1
+  quarter-final: 0
   group: -1
 
 context:
@@ -18,11 +23,44 @@ sports:
     competitions:
       Premier League: 6
       FA Cup: 4
+      # Accented, to prove a feed writing "Super Lig" still resolves.
+      Süper Lig: 5
+      Türkiye Kupası: 3
 
   tennis:
+    # Its own curve, shallower than the shared default.
     stages:
       final: +1
       quarter-final: -1
+      early-round: -3
+      qualifying: -5
     competitions:
+      Olympic Tennis: 10
       Wimbledon: 9
       ATP 250: 3
+
+  basketball:
+    # NBA is a substring of WNBA. Whole-word matching is the only thing that
+    # keeps them apart.
+    competitions:
+      NBA: 6
+      WNBA: 3
+
+  formula1:
+    # A general line sitting beside specific ones, to prove longest match wins.
+    competitions:
+      Monaco Grand Prix: 8
+      Grand Prix: 6
+      Formula 1 Grand Prix: 7
+      Formula 1 Qualifying: 5
+
+  golf:
+    # Numbers its rounds, where tennis lumps early ones together. Same words,
+    # different meanings, resolved by consulting only this sport's table.
+    stages:
+      final-round: +1
+      round-2: -1
+      round-1: -1
+    competitions:
+      The Masters: 9
+      PGA Tour: 3

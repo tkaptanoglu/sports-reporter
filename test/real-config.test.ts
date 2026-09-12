@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { loadConfig } from '../src/config/load.js';
+import { KNOWN_STAGE_KEYS } from '../src/scoring/stage.js';
 import type { InterestsConfig, RulesConfig } from '../src/config/types.js';
 
 /**
@@ -54,6 +55,18 @@ describe('config/rules.yaml', () => {
     for (const [sport, block] of Object.entries(rules.sports)) {
       for (const [stage, adj] of Object.entries(block.stages ?? {})) {
         assert.ok(isInteger(adj), `${sport} stage "${stage}" is not a whole number`);
+      }
+    }
+  });
+
+  test('every stage key in the table is one the matcher can recognise', () => {
+    // A stage key with no pattern behind it can never fire, so its adjustment
+    // would sit in the file looking effective while doing nothing.
+    const tables = [rules.default_stages, ...Object.values(rules.sports).map((s) => s.stages ?? {})];
+
+    for (const table of tables) {
+      for (const key of Object.keys(table)) {
+        assert.ok(KNOWN_STAGE_KEYS.includes(key), `no pattern recognises the stage "${key}"`);
       }
     }
   });
