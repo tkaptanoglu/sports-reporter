@@ -6,17 +6,27 @@ import { sourceCovers } from './types.js';
 import { theSportsDb } from './thesportsdb.js';
 import { espnScoreboard } from './espn.js';
 import { calendarFeeds } from './calendars.js';
+import { fisSkiJumping } from './fis.js';
+import { snookerOrg } from './snooker.js';
 
 /**
  * Every source the program knows about.
  *
  * They are deliberately not allowed to overlap. ESPN owns football, tennis,
  * basketball and Formula 1; TheSportsDB owns the sports ESPN has nothing for;
- * calendars own whatever you point them at. Two sources describing the same
+ * calendars own whatever you point them at. Snooker and ski jumping each have
+ * a dedicated source because the general ones either miss them entirely or omit
+ * the only detail that matters. Two sources describing the same
  * fixture would survive deduplication, because they would arrive under
  * different ids, and you would read the same match twice.
  */
-export const sources: EventSource[] = [espnScoreboard, theSportsDb, calendarFeeds];
+export const sources: EventSource[] = [
+  espnScoreboard,
+  theSportsDb,
+  snookerOrg,
+  fisSkiJumping,
+  calendarFeeds,
+];
 
 /**
  * Asks every relevant source in parallel and merges the results.

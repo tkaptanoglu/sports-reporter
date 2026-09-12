@@ -12,6 +12,11 @@ sports:
     also:
       - Sultanlar Ligi
 
+favourites:
+  - Ronnie O'Sullivan
+  - name: Amed
+    sport: football
+
 settings:
   timezone: Europe/Istanbul
   days_ahead: 3

@@ -3,6 +3,8 @@ import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { notImplemented } from '../util/todo.js';
 import type {
+  ContextConfig,
+  Favourite,
   InterestsConfig,
   LoadedConfig,
   RawInterestsConfig,
@@ -13,6 +15,7 @@ import type {
 
 const INTERESTS_FILE = 'interests.yaml';
 const RULES_FILE = 'rules.yaml';
+const CONTEXT_FILE = 'context.yaml';
 
 /**
  * Reads both YAML files from disk.
@@ -40,7 +43,14 @@ export function loadConfig(dir = 'config'): LoadedConfig {
   const raw = parse(readFileSync(interestsPath, 'utf8')) as RawInterestsConfig;
   const rules = parse(readFileSync(rulesPath, 'utf8')) as RulesConfig;
 
-  return { interests: normaliseInterests(raw), rules };
+  // Optional. Without it every context flag simply stays unraised, which is
+  // the same behaviour as before the file existed.
+  const contextPath = join(base, CONTEXT_FILE);
+  const context = existsSync(contextPath)
+    ? ((parse(readFileSync(contextPath, 'utf8')) as ContextConfig | null) ?? {})
+    : {};
+
+  return { interests: normaliseInterests(raw), rules, context };
 }
 
 /**
@@ -57,7 +67,13 @@ function normaliseInterests(raw: RawInterestsConfig): InterestsConfig {
     sports[sport] = typeof value === 'number' ? { interest: value } : value;
   }
 
-  return { sports, settings: raw.settings };
+  // A favourite is usually just a name. The long form exists only to pin one
+  // to a single sport, for a name that means different things in each.
+  const favourites: Favourite[] = (raw.favourites ?? [])
+    .map((entry) => (typeof entry === 'string' ? { name: entry } : entry))
+    .filter((entry) => typeof entry.name === 'string' && entry.name.trim().length > 0);
+
+  return { sports, favourites, settings: raw.settings };
 }
 
 /**

@@ -131,28 +131,44 @@ describe('the real registry', () => {
     assert.equal(new Set(names).size, names.length);
   });
 
-  test('the two API sources claim no sport in common', () => {
-    // The design decision, written down so it cannot quietly erode. Both
-    // describing one fixture would produce two entries, not one, because they
-    // arrive under different ids and survive deduplication.
-    const espn = sources.find((s) => s.name === 'espn')?.sports ?? [];
-    const sportsdb = sources.find((s) => s.name === 'thesportsdb')?.sports ?? [];
-    assert.notEqual(espn, 'all');
-    assert.notEqual(sportsdb, 'all');
+  test('no two sources claim the same sport', () => {
+    // The design decision, written down so it cannot quietly erode. Two
+    // sources describing one fixture would produce two entries, not one,
+    // because they arrive under different ids and survive deduplication.
+    const owner = new Map<string, string>();
 
-    const overlap = [...espn].filter((sport) => [...sportsdb].includes(sport));
-    assert.deepEqual(overlap, [], 'espn and thesportsdb both claim these sports');
+    for (const source of sources) {
+      if (source.sports === 'all') continue;
+      for (const sport of source.sports) {
+        const already = owner.get(sport);
+        assert.equal(already, undefined, `${sport} is claimed by both ${already} and ${source.name}`);
+        owner.set(sport, source.name);
+      }
+    }
+  });
+
+  test('snooker and ski jumping belong to their dedicated sources', () => {
+    // Both were moved off the general sources on purpose: one to get the
+    // players named, the other because nothing else carries the sport at all.
+    const owns = (name: string, sport: string): boolean => {
+      const source = sources.find((s) => s.name === name);
+      return source !== undefined && source.sports !== 'all' && source.sports.includes(sport);
+    };
+
+    assert.ok(owns('snooker', 'snooker'));
+    assert.ok(owns('fis', 'ski-jumping'));
+    assert.ok(!owns('thesportsdb', 'snooker'));
   });
 
   test('between them the sources cover every sport that has a source at all', () => {
     const claimed = new Set(sources.flatMap((s) => (s.sports === 'all' ? [] : s.sports)));
 
-    for (const sport of ['football', 'tennis', 'formula1', 'basketball', 'cycling', 'athletics', 'motogp', 'snooker', 'volleyball', 'handball']) {
+    for (const sport of ['football', 'tennis', 'formula1', 'basketball', 'cycling', 'athletics', 'motogp', 'snooker', 'volleyball', 'handball', 'ski-jumping']) {
       assert.ok(claimed.has(sport), `no source claims ${sport}`);
     }
 
     // Stated as a test so it is impossible to forget: nothing covers these.
-    for (const sport of ['ski-jumping', 'alpine-skiing', 'curling']) {
+    for (const sport of ['alpine-skiing', 'curling']) {
       assert.ok(!claimed.has(sport), `${sport} now has a source, so update the README`);
     }
   });

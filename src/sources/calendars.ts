@@ -196,7 +196,7 @@ export const calendarFeeds: EventSource = {
     const feeds = loadFeeds().filter((feed) => wanted.has(feed.sport));
 
     if (feeds.length === 0) {
-      const uncovered = ['ski-jumping', 'alpine-skiing', 'curling'].filter((s) => wanted.has(s));
+      const uncovered = ['alpine-skiing', 'curling'].filter((s) => wanted.has(s));
       if (uncovered.length > 0) {
         log.warn(
           `calendar: no feeds configured, so ${uncovered.join(', ')} will report nothing. ` +

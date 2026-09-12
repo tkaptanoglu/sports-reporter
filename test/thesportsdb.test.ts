@@ -22,7 +22,7 @@ describe('the coverage table', () => {
 
   test('leaves out the winter sports it has no data for', () => {
     const claimed = COVERAGE.map((c) => c.sport);
-    for (const sport of ['ski-jumping', 'alpine-skiing', 'curling']) {
+    for (const sport of ['alpine-skiing', 'curling']) {
       assert.ok(!claimed.includes(sport));
     }
   });

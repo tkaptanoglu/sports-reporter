@@ -8,8 +8,9 @@ import type { EventSource, FetchRequest } from './types.js';
 /**
  * TheSportsDB, a community sports database with a documented JSON API.
  *
- * Used strictly to fill the gaps ESPN leaves: cycling, athletics, MotoGP,
- * snooker, volleyball and handball. It deliberately does not cover football,
+ * Used strictly to fill the gaps the other sources leave: cycling, athletics,
+ * MotoGP, volleyball and handball. Snooker moved to its own source, which names
+ * the players. It deliberately does not cover football,
  * tennis, basketball or Formula 1, because ESPN does those better and two
  * sources describing the same fixture would produce two entries, not one.
  *
@@ -42,7 +43,6 @@ export interface Coverage {
 export const COVERAGE: Coverage[] = [
   { sport: 'cycling', theirSport: 'Cycling', fallback: 'UCI World Tour' },
   { sport: 'athletics', theirSport: 'Athletics', fallback: 'World Athletics Continental Tour' },
-  { sport: 'snooker', theirSport: 'Snooker', fallback: 'Ranking Event' },
   { sport: 'volleyball', theirSport: 'Volleyball' },
   { sport: 'handball', theirSport: 'Handball' },
   // They file every series under one sport, so MotoGP needs filtering out of it.

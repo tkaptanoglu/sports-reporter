@@ -24,10 +24,25 @@ export type ContextFlag =
   | 'promotion-decider'
   | 'relegation-decider'
   | 'derby'
+  | 'favourite'
   | 'record-attempt'
   | 'dead-rubber'
   | 'exhibition'
   | 'youth-or-reserve';
+
+/**
+ * A team or athlete you care about more than the fixture alone would suggest.
+ *
+ * Lives in interests.yaml rather than context.yaml, because who you support is
+ * the most personal thing in this whole program and that file never leaves
+ * your machine.
+ */
+export interface Favourite {
+  /** Matched on whole words against the participants and the title. */
+  name: string;
+  /** Confines it to one sport. Absent means every sport you follow. */
+  sport?: SportKey;
+}
 
 // ---------------------------------------------------------------------------
 // interests.yaml
@@ -62,16 +77,19 @@ export interface SportInterest {
   also?: string[];
 }
 
-/** interests.yaml exactly as written: a bare rating, or the long form. */
+/** interests.yaml exactly as written: bare forms allowed throughout. */
 export interface RawInterestsConfig {
   sports: Record<SportKey, number | SportInterest>;
+  favourites?: Array<string | Favourite>;
   settings: Settings;
 }
 
-/** interests.yaml after loading, with every entry in the long form. */
+/** interests.yaml after loading, with every entry in its long form. */
 export interface InterestsConfig {
   /** Sports absent here are out of scope and never reach the report. */
   sports: Record<SportKey, SportInterest>;
+  /** Teams and athletes worth a bonus wherever they turn up. */
+  favourites: Favourite[];
   settings: Settings;
 }
 
@@ -102,8 +120,27 @@ export interface RulesConfig {
   sports: Record<SportKey, SportRules>;
 }
 
-/** Both files, parsed. */
+// ---------------------------------------------------------------------------
+// context.yaml
+// ---------------------------------------------------------------------------
+
+/**
+ * The knowledge no sports feed carries: which fixtures are grudge matches, and
+ * which event a competition is settled on.
+ *
+ * Both are lists a person maintains, because both are matters of history and
+ * judgement rather than data.
+ */
+export interface ContextConfig {
+  /** Sport key to pairs of names. A fixture with both names is a derby. */
+  rivalries?: Record<SportKey, string[][]>;
+  /** Sport key to rules. Every phrase in a rule must appear in the event. */
+  deciders?: Record<SportKey, string[][]>;
+}
+
+/** Every config file, parsed. */
 export interface LoadedConfig {
   interests: InterestsConfig;
   rules: RulesConfig;
+  context: ContextConfig;
 }

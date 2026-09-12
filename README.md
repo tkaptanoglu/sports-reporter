@@ -15,20 +15,23 @@ you rated 9, however big its final is.
 
 Works end to end. Fetches, scores, ranks and prints.
 
-| Working | Stubbed |
+| Working | Not yet |
 | --- | --- |
-| Config loading and validation | Context flag detection |
+| Config loading | Standings-based context flags |
 | Timezone-aware day windows | |
 | All three data sources | |
 | Competition and stage matching | |
+| Derby and decider flags | |
 | Significance and ranking | |
 | Terminal summary and HTML report | |
 
-Context flags are stubbed deliberately rather than half-written. Detecting a
-title decider needs league standings and the fixtures left to play; a derby
-needs a rivalry list. Until it can prove a flag from the data it claims none,
-because a wrongly applied one would push a meaningless fixture to the top of
-your Saturday with nothing to explain why.
+Two of the context flags are live: `derby` and `title-decider`, both driven by
+`config/context.yaml`. The rest stay unraised on purpose. A relegation
+six-pointer or a live title race needs league standings and the fixtures left
+to play, which means a standings source and real arithmetic, not a list. Until
+a flag can be proved it is never claimed, because a wrongly applied one would
+push a meaningless fixture to the top of your Saturday with nothing to explain
+why.
 
 ## Scoring
 
@@ -58,13 +61,36 @@ would produce two entries, because they arrive under different ids.
 | Source | Sports | Notes |
 | --- | --- | --- |
 | ESPN | football, tennis, basketball, Formula 1 | No key, no cap, ~30 leagues |
-| TheSportsDB | cycling, athletics, MotoGP, snooker, volleyball, handball | Free key is capped, see below |
+| TheSportsDB | cycling, athletics, MotoGP, volleyball, handball | Free key is capped, see below |
+| snooker.org | snooker | Scraper. Names the players |
+| FIS | ski jumping | Scraper. Season calendar |
 | Calendars | whatever you configure | iCalendar feeds, none shipped |
 
-**Ski jumping, alpine skiing and curling have no source.** Neither API carries
-them in any form, and FIS, World Curling and the EHF all publish their
-schedules as rendered HTML with no feed behind them. The calendar source exists
-for exactly this: point it at any `.ics` URL by creating `config/calendars.yaml`.
+No two sources claim the same sport, and a test enforces it. Two of them
+describing one fixture would produce two entries rather than one, because they
+arrive under different ids and survive deduplication.
+
+The last two are scrapers, which nothing else here is. Both exist because there
+was no alternative. Ski jumping is carried by no aggregator at all, and the
+snooker aggregators give you "English Open Final" without ever saying who is
+playing, which in an individual sport is the only thing worth knowing.
+snooker.org's own API refuses this client outright, so its HTML it is.
+
+Flashscore was the other candidate for both and was rejected. Its terms forbid
+automated access and it is built to detect and block exactly this.
+
+Expect scrapers to break. Each fails on its own without touching another sport,
+and says in the log when a page has changed shape rather than silently
+reporting an empty week.
+
+A published snooker draw only runs a round or two ahead. Where it exists you
+get named players; where it does not you get one event per tournament day, the
+same compromise the tennis reader makes.
+
+**Alpine skiing and curling still have no source.** Neither API carries them,
+and World Curling and FIS publish those schedules with no feed behind them. The
+calendar source exists for exactly this: point it at any `.ics` URL by creating
+`config/calendars.yaml`.
 
     feeds:
       - sport: alpine-skiing
@@ -136,6 +162,23 @@ bare rating for the long form to take just that half:
       also:
         - Sultanlar Ligi
 
+It also holds your favourites, the teams and athletes worth a bonus wherever
+they turn up:
+
+    favourites:
+      - Ronnie O'Sullivan
+      - Beşiktaş
+      - name: Amed
+        sport: football
+
+A bare name applies across every sport you follow; adding `sport:` pins one to
+a single sport, for a club name that means different things in each. Any event
+involving a favourite earns the `favourite` flag, whose size lives in
+`rules.yaml` beside the other context adjustments. Names match on whole words
+with accents folded and apostrophes ignored, so "Besiktas" finds Beşiktaş,
+"Amed" finds both "Amed SFK" and "Amedspor", and "O'Sullivan" survives whichever
+apostrophe a feed uses.
+
 Where a source knows for certain which side it queried, that is believed. ESPN
 asking the WTA endpoint is a fact, not a guess. Everywhere else the division is
 read out of the competition name, in several languages, so a whole-day feed
@@ -147,9 +190,30 @@ exceptions, for leagues like Sultanlar Ligi whose name says nothing either way.
 Every run reports how many events it removed and why, so nothing disappears
 quietly.
 
-`rules.yaml` is the scoring table: 21 sports and 239 competitions, each with a
-base score, plus stage adjustments and context flags. It is tracked, because it
+`rules.yaml` is the scoring table: every competition with a base score, plus
+stage adjustments and the size of each context bonus. It is tracked, because it
 is the program's logic rather than personal data.
+
+`context.yaml` holds what no sports feed will ever tell you. Rivalries, as pairs
+of club names, and deciders, as the phrases that identify the event a
+competition is settled on.
+
+    rivalries:
+      football:
+        - [Manchester United, Manchester City]
+
+    deciders:
+      cycling:
+        - [Vuelta a Espana, stage 21]
+
+A fixture with both halves of a pair earns the `derby` flag. An event containing
+every phrase in a decider rule earns `title-decider`. Names match on whole
+words with accents folded, so "Besiktas" finds "Beşiktaş" and "Tottenham" finds
+"Tottenham Hotspur".
+
+Decider rules search the competition, the title and the stage together, because
+feeds scatter the pieces. A grand tour arrives filed under "UCI World Tour" with
+the race and its stage number only in the title.
 
 A competition the table has never seen scores the unknown default and is listed
 at the foot of the report, so the table grows through use instead of needing to

@@ -73,6 +73,8 @@ context:
   promotion-decider: +1
   relegation-decider: +1
   derby: +1
+  # Teams and athletes you named in interests.yaml.
+  favourite: +2
   record-attempt: +1
   dead-rubber: -2
   exhibition: -3

@@ -1,0 +1,126 @@
+# =====================================================================
+#  context.yaml  --  what the feeds cannot tell you about a fixture.
+# =====================================================================
+#
+#  rules.yaml answers "how big is this competition". This file answers
+#  "is this particular fixture special", which no sports API will ever
+#  tell you because it is a matter of history and judgement.
+#
+#  Both sections feed the context flags in rules.yaml, so the size of
+#  the bonus lives there and the list of what earns it lives here.
+#
+#  HOW MATCHING WORKS
+#    Names are matched on whole words, case-insensitively, with accents
+#    folded away. So "Besiktas" finds "Beşiktaş", and "Brighton" finds
+#    "Brighton & Hove Albion". You can write the short form.
+#
+#  Every entry below is my first guess. Add, delete and argue.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+#  RIVALRIES  ->  the `derby` flag
+# ---------------------------------------------------------------------
+#  A fixture earns the flag when BOTH names in a pair appear in it.
+#
+#  Keep the names distinctive. "Sporting" on its own would find any club
+#  with the word in its name, which is most of Portugal and half of Spain.
+# ---------------------------------------------------------------------
+
+rivalries:
+  football:
+    # England
+    - [Manchester United, Manchester City]
+    - [Liverpool, Everton]
+    - [Liverpool, Manchester United]
+    - [Arsenal, Tottenham]
+    - [Chelsea, Tottenham]
+    - [Arsenal, Chelsea]
+    - [Newcastle United, Sunderland]
+    - [Aston Villa, Birmingham]
+    - [West Ham, Millwall]
+    - [Crystal Palace, Brighton]
+    - [Sheffield United, Sheffield Wednesday]
+
+    # Scotland
+    - [Celtic, Rangers]
+
+    # Turkey
+    - [Galatasaray, Fenerbahce]
+    - [Galatasaray, Besiktas]
+    - [Fenerbahce, Besiktas]
+    - [Trabzonspor, Fenerbahce]
+    - [Trabzonspor, Galatasaray]
+
+    # Spain
+    - [Real Madrid, Barcelona]
+    - [Real Madrid, Atletico Madrid]
+    - [Sevilla, Real Betis]
+    - [Athletic Club, Real Sociedad]
+    - [Espanyol, Barcelona]
+
+    # Italy
+    - [AC Milan, Internazionale]
+    - [AS Roma, Lazio]
+    - [Juventus, Internazionale]
+    - [Juventus, Torino]
+
+    # Germany
+    - [Borussia Dortmund, Schalke]
+    - [Bayern Munich, Borussia Dortmund]
+    - [Hamburg, Werder Bremen]
+
+    # Elsewhere
+    - [Ajax, Feyenoord]
+    - [Ajax, PSV]
+    - [Benfica, Porto]
+    - [Benfica, Sporting CP]
+    - [Paris Saint-Germain, Marseille]
+    - [Lyon, Saint-Etienne]
+
+  volleyball:
+    # The Turkish women's league is where this sport's rivalries live.
+    - [VakifBank, Fenerbahce]
+    - [VakifBank, Eczacibasi]
+    - [Fenerbahce, Eczacibasi]
+    - [Galatasaray, Fenerbahce]
+
+  basketball:
+    - [Los Angeles Lakers, Boston Celtics]
+    - [Los Angeles Lakers, LA Clippers]
+    - [Real Madrid, Barcelona]
+    - [Fenerbahce, Anadolu Efes]
+
+
+# ---------------------------------------------------------------------
+#  DECIDERS  ->  the `title-decider` flag
+# ---------------------------------------------------------------------
+#  A fixture earns the flag when EVERY phrase in a rule appears in it.
+#  The competition name, the event title and the stage are all searched,
+#  because feeds scatter this information across all three. A grand tour
+#  arrives as league "UCI World Tour" with the race in the title.
+#
+#  One phrase is a complete rule. Two narrow it to one event within a
+#  competition.
+#
+#  These are structural deciders: the last stage of a race, the final
+#  round of a season. Whether a title is still mathematically alive is a
+#  different question, and answering it needs standings the app does not
+#  have.
+# ---------------------------------------------------------------------
+
+deciders:
+  cycling:
+    # Stage 21 is the day the winner is crowned. If you would rather
+    # flag the day it is actually settled, make these stage 20.
+    - [Vuelta a Espana, stage 21]
+    - [Tour de France, stage 21]
+    - [Giro d'Italia, stage 21]
+    - [UCI Road World Championships, Elite Road Race]
+
+  formula1:
+    # The season finale. Not always still live, but always the last word.
+    - [Abu Dhabi Grand Prix]
+
+  motogp:
+    - [Valencia Grand Prix]

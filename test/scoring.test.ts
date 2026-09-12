@@ -25,6 +25,9 @@ import { makeEvent } from './helpers.js';
 const config = loadConfig(join('test', 'fixtures', 'config'));
 const real = loadConfig();
 
+/** A config with no rivalries, deciders or favourites of any kind. */
+const bare = { ...config, context: {}, interests: { ...config.interests, favourites: [] } };
+
 const football = config.rules.sports['football']?.competitions ?? {};
 const formula1 = config.rules.sports['formula1']?.competitions ?? {};
 const basketball = config.rules.sports['basketball']?.competitions ?? {};
@@ -148,19 +151,19 @@ describe('scoreSignificance', () => {
     // suspect, so they are asserted against the real shipped rules.
     const worldCupFinal = scoreSignificance(
       makeEvent({ competition: 'FIFA World Cup', stage: 'Final' }),
-      real.rules,
+      real,
     );
     assert.equal(worldCupFinal.significance, 10);
 
     const thirdDivision = scoreSignificance(
       makeEvent({ competition: 'TFF 3. Lig', stage: null }),
-      real.rules,
+      real,
     );
     assert.equal(thirdDivision.significance, 1);
   });
 
   test('adds the stage adjustment to the base', () => {
-    const result = scoreSignificance(makeEvent({ stage: 'Final' }), config.rules);
+    const result = scoreSignificance(makeEvent({ stage: 'Final' }), config);
     assert.equal(result.breakdown.base, 6);
     assert.equal(result.breakdown.stageAdjustment, 2);
     assert.equal(result.significance, 8);
@@ -169,7 +172,7 @@ describe('scoreSignificance', () => {
   test('falls back to the broader competition when the specific one has no rule', () => {
     const result = scoreSignificance(
       makeEvent({ competition: 'Kit Kat Invitational', competitionFallback: 'FA Cup' }),
-      config.rules,
+      config,
     );
 
     assert.equal(result.breakdown.matchedCompetition, 'FA Cup');
@@ -179,7 +182,7 @@ describe('scoreSignificance', () => {
   test('prefers the specific rule over the fallback when both would match', () => {
     const result = scoreSignificance(
       makeEvent({ competition: 'Premier League', competitionFallback: 'FA Cup' }),
-      config.rules,
+      config,
     );
 
     assert.equal(result.breakdown.matchedCompetition, 'Premier League');
@@ -188,7 +191,7 @@ describe('scoreSignificance', () => {
   test('an unknown competition scores the default and is recorded as unmatched', () => {
     const result = scoreSignificance(
       makeEvent({ competition: 'Kit Kat Invitational', competitionFallback: null }),
-      config.rules,
+      config,
     );
 
     assert.equal(result.breakdown.matchedCompetition, null);
@@ -199,7 +202,7 @@ describe('scoreSignificance', () => {
     // An Olympic final is already a 10 before the stage bonus is added.
     const result = scoreSignificance(
       makeEvent({ sport: 'tennis', competition: 'Olympic Tennis', stage: 'Final' }),
-      config.rules,
+      config,
     );
 
     assert.equal(result.breakdown.base, 10);
@@ -208,14 +211,14 @@ describe('scoreSignificance', () => {
   });
 
   test('never clamps silently when it did not need to', () => {
-    const result = scoreSignificance(makeEvent(), config.rules);
+    const result = scoreSignificance(makeEvent(), config);
     assert.equal(result.breakdown.clamped, false);
   });
 
   test('returns a breakdown complete enough to explain the number', () => {
     const result = scoreSignificance(
       makeEvent({ sport: 'tennis', competition: 'Wimbledon', stage: 'Quarterfinals' }),
-      config.rules,
+      config,
     );
 
     assert.deepEqual(result.breakdown, {
@@ -231,7 +234,7 @@ describe('scoreSignificance', () => {
 
   test('refuses a sport with no rules block rather than scoring it as zero', () => {
     assert.throws(
-      () => scoreSignificance(makeEvent({ sport: 'quidditch' }), config.rules),
+      () => scoreSignificance(makeEvent({ sport: 'quidditch' }), config),
       /No rules for sport/,
     );
   });
@@ -273,8 +276,8 @@ describe('detectContextFlags', () => {
   test('claims nothing, because it can currently prove nothing', () => {
     // Deliberate, not an oversight. A wrongly applied title-decider flag would
     // push a meaningless fixture to the top of a Saturday with no explanation.
-    assert.deepEqual(detectContextFlags(makeEvent()), []);
-    assert.deepEqual(detectContextFlags(makeEvent({ title: 'Derby Day', stage: 'Final' })), []);
+    assert.deepEqual(detectContextFlags(makeEvent(), bare), []);
+    assert.deepEqual(detectContextFlags(makeEvent({ title: "Derby Day", stage: "Final" }), bare), []);
   });
 });
 

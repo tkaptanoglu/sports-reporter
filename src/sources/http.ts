@@ -76,6 +76,49 @@ export async function fetchJson<T>(url: string, options: FetchOptions = {}): Pro
 }
 
 /**
+ * GETs a page as text, with the same retry manners as fetchJson.
+ *
+ * For the sources that have no API behind them. A federation calendar rendered
+ * as HTML is still a published schedule; it just costs a parser.
+ */
+export async function fetchText(url: string, options: FetchOptions = {}): Promise<string> {
+  const { timeoutMs = 20_000, retries = 2 } = options;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    if (attempt > 0) await sleep(500 * attempt);
+
+    try {
+      const response = await fetch(url, {
+        // A plain browser user agent. These pages are served to people, and a
+        // few of them refuse anything that does not look like one.
+        headers: {
+          accept: 'text/html,application/xhtml+xml',
+          'user-agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+        },
+        signal: AbortSignal.timeout(timeoutMs),
+        redirect: 'follow',
+      });
+
+      if (!response.ok) {
+        const error = new HttpError(`HTTP ${response.status} from ${url}`, response.status, url);
+        if (response.status < 500 && response.status !== 429) throw error;
+        lastError = error;
+        continue;
+      }
+
+      return await response.text();
+    } catch (error) {
+      lastError = error;
+      if (error instanceof HttpError && error.status !== null && error.status < 500) throw error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new HttpError(`Failed to fetch ${url}`, null, url);
+}
+
+/**
  * Runs an async job over every item, never more than `limit` at a time.
  *
  * Free APIs are the whole reason this exists. Firing one request per league per

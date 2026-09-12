@@ -1,0 +1,18 @@
+# Fixture only. A handful of entries covering each matching hazard, so the
+# tests do not depend on which rivalries the user happens to keep.
+rivalries:
+  football:
+    - [Manchester United, Manchester City]
+    - [Arsenal, Tottenham]
+    - [Galatasaray, Fenerbahce]
+
+  volleyball:
+    - [VakifBank, Fenerbahce]
+
+deciders:
+  cycling:
+    - [Vuelta a Espana, stage 21]
+    - [Tour de France, stage 21]
+
+  formula1:
+    - [Abu Dhabi Grand Prix]

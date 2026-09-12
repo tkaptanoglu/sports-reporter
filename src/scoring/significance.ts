@@ -1,7 +1,7 @@
 import { detectContextFlags } from './context-flags.js';
 import { matchCompetition } from './match-competition.js';
 import { matchStage } from './stage.js';
-import type { RulesConfig } from '../config/types.js';
+import type { LoadedConfig } from '../config/types.js';
 import type { ScoreBreakdown, SportEvent } from '../model/event.js';
 
 export interface SignificanceResult {
@@ -20,7 +20,8 @@ export interface SignificanceResult {
  * output you will argue with, so it returns a full breakdown rather than a bare
  * number. Without the breakdown, tuning rules.yaml is guesswork.
  */
-export function scoreSignificance(event: SportEvent, rules: RulesConfig): SignificanceResult {
+export function scoreSignificance(event: SportEvent, config: LoadedConfig): SignificanceResult {
+  const { rules } = config;
   const sportRules = rules.sports[event.sport];
   if (sportRules === undefined) {
     throw new Error(
@@ -43,7 +44,7 @@ export function scoreSignificance(event: SportEvent, rules: RulesConfig): Signif
   const stage = matchStage(event.sport, event.stage, rules);
   const stageAdjustment = stage?.adjustment ?? 0;
 
-  const flags = detectContextFlags(event).map((flag) => ({
+  const flags = detectContextFlags(event, config).map((flag) => ({
     flag,
     adjustment: rules.context[flag] ?? 0,
   }));

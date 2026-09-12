@@ -21,7 +21,7 @@ export function scoreEvent(event: SportEvent, config: LoadedConfig): ScoredEvent
     );
   }
 
-  const { significance, breakdown } = scoreSignificance(event, config.rules);
+  const { significance, breakdown } = scoreSignificance(event, config);
 
   return {
     ...event,

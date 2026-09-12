@@ -21,6 +21,10 @@ export function normalise(text: string): string {
     .replace(/[ıøđłßæœþð]/g, (c) => STANDALONE[c] ?? c)
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
+    // Apostrophes are deleted rather than turned into spaces, so a rule for
+    // "O'Sullivan" also finds a feed that writes "OSullivan". Feeds drop the
+    // mark far more often than they replace it with a space.
+    .replace(/['’ʼ`]/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 }
