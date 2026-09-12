@@ -1,0 +1,68 @@
+# =====================================================================
+#  interests.example.yaml  --  template for your own interests.yaml.
+# =====================================================================
+#
+#  WHAT THIS FILE CONTROLS
+#    Only the sports listed under `sports:` are ever reported on.
+#    Anything not listed here is out of scope and is thrown away before
+#    it is ever rated.
+#
+#    Your final ranking for an event is:
+#
+#        importance = interest (this file) x significance (rules.yaml)
+#
+#    So a perfect 10 event in a sport you rated 3 scores 30, and sits
+#    below an ordinary 5 event in a sport you rated 9, which scores 45.
+#    Push these numbers around until that trade-off feels right.
+#
+#  HOW TO EDIT
+#    * Change any number. Whole numbers, 1 to 10.
+#    * Delete the line for a sport you do not follow at all.
+#    * Uncomment a line from the menu below to bring a sport into scope.
+#    * The key on the left must match a sport key in rules.yaml.
+#      If it does not, the app will say so on the next run instead of
+#      silently ignoring it.
+#
+#  THIS IS THE TEMPLATE, NOT YOUR CONFIG
+#    This file is tracked in git so that a fresh clone has something to
+#    copy. Your real config/interests.yaml is NOT tracked, so your own
+#    ratings never leave this machine. Copy this file to interests.yaml
+#    and edit that copy. Every number below is a placeholder.
+# =====================================================================
+
+sports:
+  football: 8
+  tennis: 6
+  formula1: 6
+  basketball: 5
+  cycling: 3
+
+  # ---- Menu -----------------------------------------------------------
+  # Uncomment any line below to add that sport, then set your own number.
+  # Every key here already has a full entry waiting in rules.yaml.
+  #
+  # athletics: 5
+  # american-football: 5
+  # boxing: 5
+  # cricket: 5
+  # darts: 5
+  # golf: 5
+  # ice-hockey: 5
+  # mma: 5
+  # motogp: 5
+  # rugby-union: 5
+  # snooker: 5
+  # volleyball: 5
+
+
+# =====================================================================
+#  Report settings
+# =====================================================================
+#  Small, but the report is wrong without them. `timezone` decides which
+#  calendar day a late-night kickoff lands on. Use an IANA name such as
+#  Europe/Istanbul, Europe/London or America/New_York.
+# =====================================================================
+
+settings:
+  timezone: Europe/Istanbul
+  days_ahead: 7

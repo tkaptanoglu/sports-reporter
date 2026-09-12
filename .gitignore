@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+*.tsbuildinfo
+
+# generated reports
+reports/
+out/
+
+# cached feed responses
+.cache/
+
+# secrets and local overrides
+.env
+.env.*
+config/*.local.yaml
+
+# personal config: your own ratings stay on this machine.
+# config/interests.example.yaml is the tracked template.
+config/interests.yaml
+
+# editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

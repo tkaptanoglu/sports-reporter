@@ -1,0 +1,377 @@
+# =====================================================================
+#  rules.yaml  --  how significant is an event WITHIN its own sport?
+# =====================================================================
+#
+#  Scores run 0 to 10 and are always judged against the sport itself,
+#  never across sports. Comparing sports is what interests.yaml is for.
+#  So the Wimbledon final is a 10 here even if you rate tennis a 2.
+#
+#  Each event is scored in three layers, then clamped to 0..10:
+#
+#      significance = base + stage adjustment + context adjustments
+#
+#    1. BASE     One number per competition. Read it as: how big is an
+#                ORDINARY fixture in this competition? A normal midweek
+#                one, not the final.
+#
+#    2. STAGE    Where in the competition this fixture sits. Finals go
+#                up, group games and qualifiers go down. Sports with a
+#                different shape define their own `stages` block.
+#
+#    3. CONTEXT  Flags for what a flat table gets wrong: a title
+#                decider, a derby, a dead rubber.
+#
+#  Worked examples, all football:
+#      FIFA World Cup      8  + final    +2  = 10
+#      Champions League    7  + group    -1  =  6
+#      Premier League      6  + derby    +1  =  7
+#      TFF 3. Lig          1  + regular   0  =  1
+#
+#  HOW TO EDIT
+#    * Change any number. Whole numbers only.
+#    * Add a competition by adding a line under the right sport.
+#    * Competition names are matched against whatever the data source
+#      calls the event, case-insensitively, longest match wins. If your
+#      feed spells something differently, add that spelling as its own
+#      line with the same score. Both spellings can coexist.
+#    * A competition the app has never seen scores
+#      `defaults.unknown_competition` and is listed at the foot of the
+#      report, so this table grows through use instead of needing to be
+#      complete today.
+#
+#  Every number below is my first guess. Argue with them.
+# =====================================================================
+
+
+defaults:
+  unknown_competition: 2
+  min_score: 0
+  max_score: 10
+
+
+# Used by every sport that does not define its own `stages` block.
+default_stages:
+  final: +2
+  third-place: 0
+  semi-final: +1
+  quarter-final: 0
+  round-of-16: -1
+  group: -1
+  regular-season: 0
+  playoff: +1
+  qualifying: -3
+  friendly: -3
+
+
+# Applied to every sport. The app raises a flag only when it can work it
+# out from the data. Flags it cannot determine are never applied, so
+# these only ever help.
+context:
+  title-decider: +2
+  trophy-decider: +2
+  promotion-decider: +1
+  relegation-decider: +1
+  derby: +1
+  record-attempt: +1
+  dead-rubber: -2
+  exhibition: -3
+  youth-or-reserve: -3
+
+
+sports:
+
+  # ===================================================================
+  football:
+    competitions:
+      # --- International
+      FIFA World Cup: 8
+      FIFA Women's World Cup: 7
+      UEFA European Championship: 7
+      Copa América: 6
+      Africa Cup of Nations: 5
+      AFC Asian Cup: 4
+      UEFA Nations League: 4
+      FIFA World Cup Qualifying: 4
+      UEFA European Championship Qualifying: 3
+      Olympic Football: 4
+      International Friendly: 1
+
+      # --- European club
+      UEFA Champions League: 7
+      UEFA Europa League: 4
+      UEFA Conference League: 3
+      UEFA Super Cup: 4
+      FIFA Club World Cup: 5
+      UEFA Women's Champions League: 4
+
+      # --- Domestic leagues
+      Premier League: 6
+      La Liga: 6
+      Serie A: 5
+      Bundesliga: 5
+      Ligue 1: 4
+      Süper Lig: 4
+      Eredivisie: 3
+      Primeira Liga: 3
+      Major League Soccer: 3
+      Saudi Pro League: 3
+      EFL Championship: 3
+      TFF 1. Lig: 2
+      TFF 2. Lig: 1
+      TFF 3. Lig: 1
+      Women's Super League: 3
+
+      # --- Domestic cups
+      FA Cup: 4
+      Copa del Rey: 4
+      DFB-Pokal: 4
+      Coppa Italia: 4
+      Türkiye Kupası: 3
+      EFL Cup: 2
+
+  # ===================================================================
+  tennis:
+    # Tennis is a fortnight-long draw, so the curve is steeper and the
+    # base means a mid-tournament match rather than a typical one.
+    stages:
+      final: +1
+      semi-final: 0
+      quarter-final: -1
+      round-of-16: -2
+      round-of-32: -3
+      early-round: -3
+      qualifying: -5
+    competitions:
+      Australian Open: 9
+      Roland Garros: 9
+      Wimbledon: 9
+      US Open: 9
+      ATP Finals: 7
+      WTA Finals: 7
+      ATP Masters 1000: 6
+      WTA 1000: 6
+      Olympic Tennis: 6
+      ATP 500: 4
+      WTA 500: 4
+      Davis Cup: 4
+      Billie Jean King Cup: 4
+      ATP 250: 3
+      WTA 250: 3
+      United Cup: 3
+      ATP Challenger: 1
+      ITF World Tennis Tour: 1
+
+  # ===================================================================
+  formula1:
+    competitions:
+      # Named races sit above a generic round, because history and
+      # prestige are not spread evenly across the calendar.
+      Monaco Grand Prix: 8
+      British Grand Prix: 8
+      Italian Grand Prix: 8
+      Belgian Grand Prix: 8
+      Japanese Grand Prix: 7
+      Formula 1 Grand Prix: 7
+      Formula 1 Qualifying: 5
+      Formula 1 Sprint: 4
+      Formula 1 Practice: 1
+      Formula 1 Testing: 1
+      # Feeder and adjacent series
+      Formula 2: 3
+      Formula E: 3
+      Formula 3: 2
+
+  # ===================================================================
+  basketball:
+    # A best-of-seven series makes late playoff rounds far bigger than a
+    # regular-season night, so the final bonus is larger than default.
+    stages:
+      final: +3
+      conference-final: +2
+      playoff: +1
+      regular-season: 0
+      preseason: -4
+    competitions:
+      FIBA World Cup: 7
+      Olympic Basketball: 7
+      EuroBasket: 6
+      NBA: 6
+      EuroLeague: 5
+      NCAA Tournament: 5
+      NBA All-Star Game: 3
+      WNBA: 3
+      Basketbol Süper Ligi: 3
+      EuroCup: 2
+
+  # ===================================================================
+  cycling:
+    competitions:
+      Tour de France: 8
+      UCI Road World Championships: 7
+      Olympic Road Race: 7
+      Giro d'Italia: 6
+      Vuelta a España: 6
+      Paris-Roubaix: 6
+      Tour of Flanders: 6
+      Milan-San Remo: 5
+      Liège-Bastogne-Liège: 5
+      Il Lombardia: 5
+      Strade Bianche: 4
+      UCI World Tour: 3
+      UCI ProSeries: 2
+
+  # ===================================================================
+  athletics:
+    competitions:
+      Olympic Athletics: 10
+      World Athletics Championships: 8
+      European Athletics Championships: 5
+      World Athletics Indoor Championships: 5
+      London Marathon: 5
+      Boston Marathon: 5
+      Berlin Marathon: 5
+      New York City Marathon: 5
+      Tokyo Marathon: 4
+      Chicago Marathon: 4
+      Diamond League: 4
+      World Athletics Continental Tour: 2
+
+  # ===================================================================
+  rugby-union:
+    competitions:
+      Rugby World Cup: 8
+      British and Irish Lions Tour: 7
+      Six Nations: 6
+      The Rugby Championship: 5
+      European Champions Cup: 5
+      Autumn Internationals: 4
+      Premiership Rugby: 4
+      Top 14: 4
+      United Rugby Championship: 3
+      European Challenge Cup: 2
+
+  # ===================================================================
+  cricket:
+    competitions:
+      World Test Championship Final: 8
+      ICC Cricket World Cup: 7
+      The Ashes: 7
+      ICC T20 World Cup: 6
+      ICC Champions Trophy: 5
+      Indian Premier League: 5
+      Test Match: 4
+      One Day International: 3
+      Twenty20 International: 3
+      The Hundred: 2
+      Big Bash League: 2
+      County Championship: 1
+
+  # ===================================================================
+  golf:
+    # Four rounds of strokeplay: the last day is the event.
+    stages:
+      final-round: +1
+      round-3: 0
+      round-2: -1
+      round-1: -1
+    competitions:
+      The Masters: 9
+      The Open Championship: 9
+      Ryder Cup: 9
+      U.S. Open: 8
+      PGA Championship: 8
+      The Players Championship: 6
+      Solheim Cup: 5
+      FedEx Cup Playoffs: 5
+      PGA Tour: 3
+      DP World Tour: 2
+      LIV Golf: 2
+
+  # ===================================================================
+  boxing:
+    # Boxing significance lives in the fighters, not the competition, so
+    # these describe what is at stake. Expect to hand-tune this one most.
+    competitions:
+      Undisputed World Title Fight: 9
+      World Title Fight: 7
+      Interim World Title Fight: 5
+      Title Eliminator: 4
+      Regional Title Fight: 3
+      Non-Title Fight: 2
+
+  # ===================================================================
+  mma:
+    competitions:
+      UFC Title Fight: 8
+      UFC Numbered Event: 6
+      UFC Fight Night: 3
+      Professional Fighters League: 2
+      ONE Championship: 2
+      Bellator: 2
+
+  # ===================================================================
+  volleyball:
+    competitions:
+      Olympic Volleyball: 8
+      FIVB World Championship: 7
+      European Volleyball Championship: 6
+      Volleyball Nations League: 5
+      CEV Champions League: 5
+      Sultanlar Ligi: 4
+      Efeler Ligi: 3
+      CEV Cup: 2
+
+  # ===================================================================
+  snooker:
+    competitions:
+      World Snooker Championship: 9
+      UK Championship: 7
+      The Masters: 7
+      Champion of Champions: 5
+      World Grand Prix: 4
+      Ranking Event: 4
+      Invitational Event: 2
+
+  # ===================================================================
+  american-football:
+    competitions:
+      Super Bowl: 10
+      NFL Conference Championship: 8
+      NFL Playoffs: 7
+      College Football Playoff: 6
+      NFL: 5
+      NCAA Football: 3
+      NFL Preseason: 1
+
+  # ===================================================================
+  ice-hockey:
+    competitions:
+      Stanley Cup Final: 9
+      Olympic Ice Hockey: 8
+      NHL Playoffs: 7
+      IIHF World Championship: 6
+      NHL: 5
+      NHL Winter Classic: 4
+      KHL: 2
+
+  # ===================================================================
+  motogp:
+    competitions:
+      MotoGP Grand Prix: 7
+      MotoGP Sprint: 4
+      MotoGP Qualifying: 4
+      Moto2: 3
+      World Superbike: 3
+      Moto3: 2
+      MotoGP Practice: 1
+
+  # ===================================================================
+  darts:
+    competitions:
+      PDC World Darts Championship: 9
+      World Matchplay: 6
+      Premier League Darts: 5
+      World Grand Prix: 5
+      Grand Slam of Darts: 5
+      World Cup of Darts: 4
+      Players Championship: 3
