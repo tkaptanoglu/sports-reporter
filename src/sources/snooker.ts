@@ -188,6 +188,30 @@ export const snookerOrg: EventSource = {
   },
 };
 
+/**
+ * Whether this whole tournament is a qualifying event.
+ *
+ * The tour runs separate qualifying tournaments, named "Northern Ireland Open
+ * Qual" and the like. Every match in one is a qualifier, however far through
+ * its own draw it is, and the draw's own round headings never say so. Without
+ * this, a qualifying final scored exactly like a ranking final.
+ */
+export function isQualifying(name: string): boolean {
+  return /\bqual(s|if\w*)?\b/i.test(name);
+}
+
+/**
+ * Marks the stage so the scorer sees a qualifier as a qualifier.
+ *
+ * The round is kept after the word, not replaced by it, so the breakdown still
+ * says which round. The stage matcher tries qualifying before any round
+ * pattern, so the prefix is what wins.
+ */
+export function stageOf(tournament: Tournament, round: string | null): string | null {
+  if (!isQualifying(tournament.name)) return round;
+  return round === null ? 'Qualifying' : `Qualifying ${round}`;
+}
+
 /** One event per scheduled match, players and all. */
 function fromMatches(
   matches: DrawMatch[],
@@ -203,7 +227,7 @@ function fromMatches(
       competitionFallback: 'Ranking Event',
       title: `${m.players[0]} vs ${m.players[1]}`,
       startsAt: m.startsAt,
-      stage: m.round,
+      stage: stageOf(tournament, m.round),
       division: null,
       participants: [...m.players],
       source: 'snooker',
@@ -231,7 +255,7 @@ function fromTournamentDays(tournament: Tournament, request: FetchRequest): Spor
       competitionFallback: 'Ranking Event',
       title: tournament.name,
       startsAt: startsAt.toJSDate(),
-      stage: null,
+      stage: stageOf(tournament, null),
       division: null,
       participants: [],
       source: 'snooker',

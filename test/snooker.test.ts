@@ -2,7 +2,9 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseDates, parseDraw, parseIndex } from '../src/sources/snooker.js';
+import { DateTime } from 'luxon';
+import { isQualifying, parseDates, parseDraw, parseIndex, stageOf } from '../src/sources/snooker.js';
+import type { Tournament } from '../src/sources/snooker.js';
 
 const fixture = (name: string): string =>
   readFileSync(join('test', 'fixtures', 'snooker', `${name}.html`), 'utf8');
@@ -110,5 +112,52 @@ describe('parseDraw', () => {
 
   test('returns nothing rather than guessing when the page changes shape', () => {
     assert.deepEqual(parseDraw('<html><body>redesigned</body></html>'), []);
+  });
+});
+
+describe('qualifying tournaments', () => {
+  // The tour runs qualifying as separate tournaments, named "Northern Ireland
+  // Open Qual". Nothing inside the draw says so: its rounds read "Round 1" and
+  // "Final" exactly like the main event's. Without marking it, a qualifying
+  // final scored the same as a ranking final.
+  test('recognises the naming the tour actually uses', () => {
+    assert.equal(isQualifying('Northern Ireland Open Qual'), true);
+    assert.equal(isQualifying('International Championship Qual'), true);
+    assert.equal(isQualifying('World Championship Qualifying'), true);
+    assert.equal(isQualifying('German Masters Quals'), true);
+  });
+
+  test('does not mistake a main-draw tournament for a qualifier', () => {
+    for (const name of ['Northern Ireland Open', 'UK Championship', 'The Masters', 'Shoot Out']) {
+      assert.equal(isQualifying(name), false, name);
+    }
+  });
+
+  const qualifier = (name: string): Tournament => ({
+    id: '1',
+    name,
+    from: DateTime.fromISO('2026-09-13', { zone: 'UTC' }),
+    to: DateTime.fromISO('2026-09-16', { zone: 'UTC' }),
+  });
+
+  test('marks every round of a qualifier as qualifying', () => {
+    const qual = qualifier('Northern Ireland Open Qual');
+
+    assert.equal(stageOf(qual, 'Round 1'), 'Qualifying Round 1');
+    assert.equal(stageOf(qual, 'Final'), 'Qualifying Final');
+    assert.equal(stageOf(qual, null), 'Qualifying');
+  });
+
+  test('keeps the round after the word rather than replacing it', () => {
+    // The breakdown should still say which round it was. The stage matcher
+    // tries qualifying before any round pattern, so the prefix is what wins.
+    assert.match(stageOf(qualifier('X Qual'), 'Semifinals') ?? '', /Semifinals$/);
+  });
+
+  test('leaves a main-draw tournament alone', () => {
+    const main = qualifier('Northern Ireland Open');
+
+    assert.equal(stageOf(main, 'Final'), 'Final');
+    assert.equal(stageOf(main, null), null);
   });
 });

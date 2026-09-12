@@ -37,7 +37,7 @@ export function renderHtml(report: Report): string {
     Times in ${escape(report.timezone)}.
     Built ${escape(stamp(report.generatedAt, report.timezone))}.
   </p>
-  ${renderFilter()}
+  ${renderFilter(report)}
 </header>
 
 <main>
@@ -100,7 +100,7 @@ function renderDay(day: DayReport, isToday: boolean, ceiling: number, timezone: 
 function renderEvent(event: ScoredEvent, ceiling: number, timezone: string): string {
   const heat = event.importance >= ceiling * 0.66 ? 'hot' : event.importance >= ceiling * 0.33 ? 'warm' : 'cool';
 
-  return `  <details class="event ${heat}" data-importance="${event.importance}">
+  return `  <details class="event ${heat}" data-importance="${event.importance}" data-sport="${escape(event.sport)}">
     <summary>
       <span class="score">${event.importance}</span>
       <span class="time">${escape(localTimeFor(event.startsAt, timezone))}</span>
@@ -184,12 +184,46 @@ function renderUnrated(report: Report): string {
 </section>`;
 }
 
-function renderFilter(): string {
+function renderFilter(report: Report): string {
   return `  <div class="filter" hidden>
     <span>Show</span>
     <button type="button" data-min="0" class="on">everything</button>
     <button type="button" data-min="0.33">the better half</button>
     <button type="button" data-min="0.66">only the big ones</button>
+  </div>
+${renderSportFilter(report)}`;
+}
+
+/**
+ * A toggle per sport, busiest first.
+ *
+ * A week of three hundred fixtures is unreadable if snooker qualifying is
+ * having a busy Tuesday. Each sport starts on, and clicking one drops it out.
+ * The count is on the button because knowing a sport contributes ninety events
+ * is usually the reason you want it gone.
+ */
+function renderSportFilter(report: Report): string {
+  const counts = new Map<string, number>();
+  for (const day of report.days) {
+    for (const event of day.events) {
+      counts.set(event.sport, (counts.get(event.sport) ?? 0) + 1);
+    }
+  }
+  if (counts.size < 2) return '';
+
+  const buttons = [...counts]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(
+      ([sport, count]) =>
+        `    <button type="button" class="sport-toggle on" data-sport="${escape(sport)}">` +
+        `${escape(sport)}<span class="count">${count}</span></button>`,
+    )
+    .join('\n');
+
+  return `  <div class="filter sports" hidden>
+    <span>Sports</span>
+${buttons}
+    <button type="button" class="all">all</button>
   </div>`;
 }
 
@@ -271,6 +305,16 @@ h2 { font-size: .95rem; margin: 0 0 .6rem; letter-spacing: .02em; text-transform
   padding: .25rem .6rem; border-radius: 999px; cursor: pointer; font: inherit;
 }
 .filter button.on { color: var(--ink); border-color: var(--muted); }
+.filter.sports { flex-wrap: wrap; margin-top: -1rem; }
+.filter.sports button { padding: .2rem .5rem; }
+/* A sport switched off is dimmed and struck through, so the row still reads as
+   a list of what exists rather than only of what is showing. */
+.filter.sports .sport-toggle:not(.on) { opacity: .45; text-decoration: line-through; }
+.filter.sports .count {
+  margin-left: .35rem; padding: 0 .25rem; border-radius: 3px;
+  background: var(--badge-bg); font-size: .9em; font-variant-numeric: tabular-nums;
+}
+.filter.sports .all { border-style: dashed; }
 .day { margin-bottom: 2rem; }
 .day.quiet { opacity: .45; }
 .nothing { color: var(--muted); font-style: italic; margin: 0; }
@@ -327,29 +371,60 @@ h2 { font-size: .95rem; margin: 0 0 .6rem; letter-spacing: .02em; text-transform
  */
 const SCRIPT = `
 (function () {
-  var bar = document.querySelector('.filter');
-  if (!bar) return;
-  bar.hidden = false;
+  var scoreBar = document.querySelector('.filter:not(.sports)');
+  var sportBar = document.querySelector('.filter.sports');
+  if (!scoreBar) return;
+
+  scoreBar.hidden = false;
+  if (sportBar) sportBar.hidden = false;
 
   var events = Array.prototype.slice.call(document.querySelectorAll('.event'));
   var ceiling = events.reduce(function (max, el) {
     return Math.max(max, Number(el.dataset.importance) || 0);
   }, 1);
 
-  bar.addEventListener('click', function (e) {
-    var button = e.target.closest('button');
-    if (!button) return;
+  var floor = 0;
+  var off = Object.create(null);
 
-    bar.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === button); });
-    var floor = Number(button.dataset.min) * ceiling;
-
+  // Both filters are applied together, every time. Keeping one pass over the
+  // events means the two can never disagree about what should be showing.
+  function apply() {
     events.forEach(function (el) {
-      el.hidden = Number(el.dataset.importance) < floor;
+      el.hidden = Number(el.dataset.importance) < floor || off[el.dataset.sport] === true;
     });
     document.querySelectorAll('.day').forEach(function (day) {
-      var shown = day.querySelectorAll('.event:not([hidden])').length;
-      day.classList.toggle('quiet', shown === 0);
+      day.classList.toggle('quiet', day.querySelectorAll('.event:not([hidden])').length === 0);
     });
+  }
+
+  scoreBar.addEventListener('click', function (e) {
+    var button = e.target.closest('button');
+    if (!button) return;
+    scoreBar.querySelectorAll('button').forEach(function (b) {
+      b.classList.toggle('on', b === button);
+    });
+    floor = Number(button.dataset.min) * ceiling;
+    apply();
   });
+
+  if (sportBar) {
+    sportBar.addEventListener('click', function (e) {
+      var button = e.target.closest('button');
+      if (!button) return;
+
+      if (button.classList.contains('all')) {
+        // Turning everything back on is one click, not one per sport.
+        off = Object.create(null);
+        sportBar.querySelectorAll('.sport-toggle').forEach(function (b) {
+          b.classList.add('on');
+        });
+      } else {
+        var sport = button.dataset.sport;
+        off[sport] = !off[sport];
+        button.classList.toggle('on', !off[sport]);
+      }
+      apply();
+    });
+  }
 })();
 `;

@@ -146,8 +146,13 @@ It prints a summary to the terminal and writes the real report to
 `reports/<date>.html`, naming the path on the last line. Open that file in a
 browser. It is entirely self-contained, so it still renders years later with no
 network, and it follows your system light or dark setting. Each event opens to
-show the arithmetic behind its score, and three buttons hide the low scorers
-when a week runs to two hundred fixtures. `reports/` is in `.gitignore`.
+show the arithmetic behind its score.
+
+Two rows of filters sit at the top and combine. One hides the low scorers; the
+other is a toggle per sport, showing how many events each contributes, with an
+`all` button to switch them back on. Both start hidden in the markup and are
+revealed by the page’s own script, so a browser with scripting off gets the
+complete report rather than a broken one. `reports/` is in `.gitignore`.
 
 ## Tests
 

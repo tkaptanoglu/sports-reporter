@@ -110,8 +110,46 @@ describe('renderHtml', () => {
     assert.match(page, /0 events over 2 days/);
   });
 
-  test('starts with the filter hidden, so the page works without scripting', () => {
+  test('starts with both filters hidden, so the page works without scripting', () => {
     assert.match(html, /<div class="filter" hidden>/);
+  });
+
+  test('offers a toggle per sport, busiest first, with its count', () => {
+    const page = renderHtml(
+      report(
+        [
+          makeScored({ id: 'a', sport: 'snooker' }),
+          makeScored({ id: 'b', sport: 'snooker' }),
+          makeScored({ id: 'c', sport: 'football' }),
+        ],
+        ['snooker', 'football'],
+      ),
+    );
+
+    assert.match(page, /<div class="filter sports" hidden>/);
+    // Snooker has two events and football one, so snooker leads.
+    const order = [...page.matchAll(/class="sport-toggle on" data-sport="(\w+)"/g)].map((m) => m[1]);
+    assert.deepEqual(order, ['snooker', 'football']);
+    assert.match(page, /data-sport="snooker">snooker<span class="count">2<\/span>/);
+    assert.match(page, /data-sport="football">football<span class="count">1<\/span>/);
+  });
+
+  test('every sport starts switched on', () => {
+    const page = renderHtml(report([makeScored({ sport: 'snooker' }), makeScored({ id: 'b', sport: 'football' })], ['snooker', 'football']));
+    const toggles = [...page.matchAll(/class="sport-toggle([^"]*)"/g)].map((m) => m[1]);
+
+    assert.ok(toggles.length >= 2);
+    for (const classes of toggles) assert.match(classes ?? '', /\bon\b/);
+  });
+
+  test('tags each event with its sport, so the toggles have something to act on', () => {
+    assert.match(html, /data-sport="football"/);
+  });
+
+  test('leaves the sport row out when there is only one sport to toggle', () => {
+    // A row with a single button that can only hide everything is just clutter.
+    const page = renderHtml(report([makeScored()], ['football']));
+    assert.doesNotMatch(page, /filter sports/);
   });
 
   test('grades the score colour against the best event in the week, not a fixed scale', () => {
