@@ -1,0 +1,25 @@
+{
+  "name": "sports-reporter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Ranks the next seven days of sport by how much you personally should care.",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "luxon": "^3.5.0",
+    "yaml": "^2.5.0"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.4.2",
+    "@types/node": "^22.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
