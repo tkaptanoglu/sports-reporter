@@ -9,6 +9,7 @@ import type {
   LoadedConfig,
   RawInterestsConfig,
   RulesConfig,
+  Settings,
   SportInterest,
   SportKey,
 } from './types.js';
@@ -16,6 +17,23 @@ import type {
 const INTERESTS_FILE = 'interests.yaml';
 const RULES_FILE = 'rules.yaml';
 const CONTEXT_FILE = 'context.yaml';
+
+/**
+ * Used when interests.yaml leaves a setting out.
+ *
+ * There was no default at all before this, so an omitted timezone reached the
+ * window builder as undefined and failed with a message about an unknown zone
+ * rather than a missing one.
+ *
+ * CET is a real IANA zone, not a fixed offset: it keeps central European
+ * summer time, so an evening kickoff reads correctly in both July and January.
+ * Naming a city instead, such as Europe/Berlin or Europe/Paris, gives exactly
+ * the same clock and is the more conventional way to write it.
+ */
+export const DEFAULT_SETTINGS: Settings = {
+  timezone: 'CET',
+  days_ahead: 7,
+};
 
 /**
  * Reads both YAML files from disk.
@@ -73,7 +91,7 @@ function normaliseInterests(raw: RawInterestsConfig): InterestsConfig {
     .map((entry) => (typeof entry === 'string' ? { name: entry } : entry))
     .filter((entry) => typeof entry.name === 'string' && entry.name.trim().length > 0);
 
-  return { sports, favourites, settings: raw.settings };
+  return { sports, favourites, settings: { ...DEFAULT_SETTINGS, ...raw.settings } };
 }
 
 /**

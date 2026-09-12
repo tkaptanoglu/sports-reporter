@@ -1,6 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
+import { DateTime } from 'luxon';
 import { parse } from 'yaml';
 import { loadConfig } from '../src/config/load.js';
 import { KNOWN_STAGE_KEYS } from '../src/scoring/stage.js';
@@ -112,7 +113,13 @@ describe('config/interests.example.yaml', () => {
 
   test('it carries usable report settings', () => {
     assert.ok(example.settings.days_ahead >= 1);
-    assert.match(example.settings.timezone, /^[A-Za-z]+\/[A-Za-z_]+$/);
+    // Checked against the real timezone database rather than a shape regex. A
+    // name-shaped string that no zone answers to would pass a regex and then
+    // fail every run, and "CET" is a real zone with no slash in it.
+    assert.ok(
+      DateTime.now().setZone(example.settings.timezone).isValid,
+      `${example.settings.timezone} is not a timezone`,
+    );
   });
 });
 

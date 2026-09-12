@@ -76,11 +76,12 @@ sports:
 # =====================================================================
 #  Report settings
 # =====================================================================
-#  Small, but the report is wrong without them. `timezone` decides which
-#  calendar day a late-night kickoff lands on. Use an IANA name such as
-#  Europe/Istanbul, Europe/London or America/New_York.
+#  Small, but every time in the report is wrong without them. `timezone`
+#  sets both the clock times shown and which calendar day a late kickoff
+#  lands on. Use an IANA name. CET, Europe/Berlin and Europe/Paris are all
+#  the same clock; Europe/London and America/New_York are others.
 # =====================================================================
 
 settings:
-  timezone: Europe/Istanbul
+  timezone: CET
   days_ahead: 7

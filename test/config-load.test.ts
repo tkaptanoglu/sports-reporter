@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { interestIn, loadConfig, unmatchedSportKeys, validateConfig } from '../src/config/load.js';
+import { DateTime } from 'luxon';
+import { DEFAULT_SETTINGS, interestIn, loadConfig, unmatchedSportKeys, validateConfig } from '../src/config/load.js';
 
 const FIXTURES = join('test', 'fixtures', 'config');
 
@@ -36,6 +37,48 @@ describe('loadConfig', () => {
     writeFileSync(join(partial, 'interests.yaml'), 'sports: {}\n');
 
     assert.throws(() => loadConfig(partial), /No rules\.yaml/);
+  });
+});
+
+describe('report settings', () => {
+  test('falls back to central European time when none is given', () => {
+    // There was no default at all before: an omitted timezone reached the
+    // window builder as undefined and failed with a message about an unknown
+    // zone rather than a missing one.
+    const dir = mkdtempSync(join(tmpdir(), 'sports-reporter-'));
+    writeFileSync(join(dir, 'interests.yaml'), 'sports:\n  football: 8\n');
+    writeFileSync(join(dir, 'rules.yaml'), 'sports:\n  football:\n    competitions:\n      X: 1\n');
+
+    const config = loadConfig(dir);
+    assert.equal(config.interests.settings.timezone, DEFAULT_SETTINGS.timezone);
+    assert.equal(config.interests.settings.days_ahead, 7);
+  });
+
+  test('the default is a zone the timezone database actually knows', () => {
+    assert.ok(DateTime.now().setZone(DEFAULT_SETTINGS.timezone).isValid);
+  });
+
+  test('the default keeps summer time rather than being a fixed offset', () => {
+    // CET the zone is not "UTC+1 always". An evening kickoff has to read
+    // correctly in July as well as January.
+    const summer = DateTime.fromISO('2026-07-15T18:30Z').setZone(DEFAULT_SETTINGS.timezone);
+    const winter = DateTime.fromISO('2027-01-15T18:30Z').setZone(DEFAULT_SETTINGS.timezone);
+
+    assert.equal(summer.toFormat('HH:mm'), '20:30');
+    assert.equal(winter.toFormat('HH:mm'), '19:30');
+  });
+
+  test('anything you do set wins over the default', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sports-reporter-'));
+    writeFileSync(
+      join(dir, 'interests.yaml'),
+      'sports:\n  football: 8\nsettings:\n  timezone: America/New_York\n  days_ahead: 3\n',
+    );
+    writeFileSync(join(dir, 'rules.yaml'), 'sports:\n  football:\n    competitions:\n      X: 1\n');
+
+    const config = loadConfig(dir);
+    assert.equal(config.interests.settings.timezone, 'America/New_York');
+    assert.equal(config.interests.settings.days_ahead, 3);
   });
 });
 
