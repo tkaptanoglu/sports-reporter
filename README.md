@@ -18,11 +18,11 @@ Works end to end. Fetches, scores, ranks and prints.
 | Working | Stubbed |
 | --- | --- |
 | Config loading and validation | Context flag detection |
-| Timezone-aware day windows | HTML report |
+| Timezone-aware day windows | |
 | All three data sources | |
 | Competition and stage matching | |
 | Significance and ranking | |
-| Terminal report | |
+| Terminal summary and HTML report | |
 
 Context flags are stubbed deliberately rather than half-written. Detecting a
 title decider needs league standings and the fixtures left to play; a derby
@@ -86,6 +86,13 @@ Turkish second tier, so `TFF 2. Lig` and `TFF 3. Lig` never appear.
 
 Windows, Node 20 or newer. There is no build step for normal use; `npm start`
 runs the TypeScript directly.
+
+It prints a summary to the terminal and writes the real report to
+`reports/<date>.html`, naming the path on the last line. Open that file in a
+browser. It is entirely self-contained, so it still renders years later with no
+network, and it follows your system light or dark setting. Each event opens to
+show the arithmetic behind its score, and three buttons hide the low scorers
+when a week runs to two hundred fixtures. `reports/` is in `.gitignore`.
 
 ## Tests
 

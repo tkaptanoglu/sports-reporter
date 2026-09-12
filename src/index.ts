@@ -2,6 +2,7 @@ import { loadConfig, unmatchedSportKeys } from './config/load.js';
 import { buildReport } from './report/build.js';
 import { renderSourceSummary } from './report/render-sources.js';
 import { renderText } from './report/render-text.js';
+import { writeHtmlReport } from './report/render-html.js';
 import { collectEvents } from './sources/registry.js';
 import { scoreEvent } from './scoring/importance.js';
 import { buildWindow } from './util/days.js';
@@ -60,11 +61,11 @@ async function main(): Promise<void> {
     throw error;
   }
 
-  // 6. Arrange into days and print.
+  // 6. Arrange into days, print a summary, and write the page you actually read.
   const report = buildReport(scored, reportWindow, sports);
   console.log(renderText(report));
 
-  // TODO: also write the HTML report once render-html.ts is implemented.
+  log.info(`Report written to ${writeHtmlReport(report)}`);
 }
 
 main().catch((error: unknown) => {

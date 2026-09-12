@@ -8,7 +8,6 @@ import { scoreSignificance } from '../src/scoring/significance.js';
 import { matchStage } from '../src/scoring/stage.js';
 import { scoreEvent } from '../src/scoring/importance.js';
 import { normalise } from '../src/scoring/text.js';
-import { renderHtml, writeHtmlReport } from '../src/report/render-html.js';
 import { notImplemented } from '../src/util/todo.js';
 import { makeEvent } from './helpers.js';
 
@@ -284,9 +283,4 @@ describe('what is still unwritten', () => {
     assert.throws(() => notImplemented('the thing'), /Not implemented yet: the thing/);
   });
 
-  test('the HTML report stops rather than writing an empty page', () => {
-    const empty = { generatedAt: new Date(), timezone: 'UTC', days: [], unrated: [], emptySports: [] };
-    assert.throws(() => renderHtml(empty), /Not implemented yet/);
-    assert.throws(() => writeHtmlReport(empty), /Not implemented yet/);
-  });
 });
