@@ -57,6 +57,7 @@ default_stages:
   quarter-final: 0
   round-of-16: -1
   group: -1
+  round-robin: -1
   regular-season: 0
   playoff: +1
   qualifying: -3
@@ -375,3 +376,75 @@ sports:
       Grand Slam of Darts: 5
       World Cup of Darts: 4
       Players Championship: 3
+
+  # ===================================================================
+  ski-jumping:
+    # One jump series per weekend, no bracket, so the stage layer never
+    # fires here. All the signal is in which meeting it is.
+    competitions:
+      Olympic Ski Jumping: 10
+      FIS Nordic World Ski Championships: 8
+      Ski Flying World Championships: 8
+      Four Hills Tournament: 8
+      Vierschanzentournee: 8
+      FIS Ski Flying World Cup: 7
+      Raw Air: 6
+      FIS Ski Jumping World Cup: 6
+      Willingen Five: 5
+      FIS Ski Jumping Grand Prix: 2
+      FIS Ski Jumping Continental Cup: 1
+
+  # ===================================================================
+  alpine-skiing:
+    competitions:
+      Olympic Alpine Skiing: 10
+      FIS Alpine World Ski Championships: 8
+
+      # Named classics carry more weight than an ordinary World Cup stop.
+      Hahnenkamm: 8
+      Kitzbühel Downhill: 8
+      Lauberhorn: 7
+      Wengen Downhill: 7
+
+      # World Cup by discipline. Longest name wins, so each of these
+      # overrides the generic World Cup entry underneath them.
+      FIS Alpine Ski World Cup Finals: 7
+      FIS Alpine Ski World Cup Downhill: 6
+      FIS Alpine Ski World Cup Slalom: 6
+      FIS Alpine Ski World Cup Super-G: 5
+      FIS Alpine Ski World Cup Giant Slalom: 5
+      FIS Alpine Ski World Cup Combined: 4
+      FIS Alpine Ski World Cup Parallel: 3
+      FIS Alpine Ski World Cup: 5
+      FIS Alpine Europa Cup: 1
+
+  # ===================================================================
+  curling:
+    # Championships run a long round robin and then a short playoff, so
+    # the round-robin adjustment does most of the work here.
+    competitions:
+      Olympic Curling: 10
+      World Men's Curling Championship: 8
+      World Women's Curling Championship: 8
+      European Curling Championships: 6
+      Tim Hortons Brier: 6
+      Scotties Tournament of Hearts: 5
+      World Mixed Doubles Curling Championship: 5
+      Grand Slam of Curling: 5
+      Players' Championship: 4
+      Continental Cup: 3
+      World Junior Curling Championships: 2
+
+  # ===================================================================
+  handball:
+    competitions:
+      Olympic Handball: 9
+      IHF World Championship: 8
+      EHF European Championship: 7
+      IHF Women's World Championship: 6
+      EHF Champions League: 6
+      Handball-Bundesliga: 4
+      EHF European League: 3
+      Liga ASOBAL: 3
+      LNH Division 1: 3
+      Handbol Süper Ligi: 2
