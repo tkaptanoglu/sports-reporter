@@ -1,0 +1,10 @@
+# Fixture only. Small and deliberately imperfect: "quidditch" has no entry in
+# the fixture rules table, so the unmatched-key check has something to find.
+sports:
+  football: 8
+  tennis: 4
+  quidditch: 5
+
+settings:
+  timezone: Europe/Istanbul
+  days_ahead: 3

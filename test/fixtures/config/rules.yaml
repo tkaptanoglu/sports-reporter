@@ -1,0 +1,28 @@
+# Fixture only. Two sports, one of which overrides the default stage curve.
+defaults:
+  unknown_competition: 2
+  min_score: 0
+  max_score: 10
+
+default_stages:
+  final: +2
+  semi-final: +1
+  group: -1
+
+context:
+  derby: +1
+  dead-rubber: -2
+
+sports:
+  football:
+    competitions:
+      Premier League: 6
+      FA Cup: 4
+
+  tennis:
+    stages:
+      final: +1
+      quarter-final: -1
+    competitions:
+      Wimbledon: 9
+      ATP 250: 3

@@ -34,7 +34,28 @@ source is implemented yet. Every stub logs `TODO` or throws a
 Windows, Node 20 or newer. There is no build step for normal use; `npm start`
 runs the TypeScript directly.
 
-To check the whole thing still compiles:
+## Tests
+
+    npm test
+
+63 tests on Node's built-in runner, no test framework dependency. Watch mode is
+`npm run test:watch`.
+
+They cover what is actually written: day windows across timezones and clock
+changes, config loading, source orchestration, and the grouping and ranking in
+the report. Two things are worth knowing about how they are set up.
+
+Most tests run against small fixtures in `test/fixtures/`, but `real-config.test.ts`
+asserts against the two YAML files that actually ship, so a stray tab or a
+renamed sport fails in a second rather than halfway through a run. It checks
+your own `interests.yaml` too when it is present, and skips that one test when
+it is not, so the suite stays green on a fresh clone.
+
+The stubs are tested as well, asserting that they stop rather than return a
+plausible number. A scorer that quietly returned zero would look like a working
+program producing a boring week.
+
+To check that everything, tests included, still compiles:
 
     npm run typecheck
 

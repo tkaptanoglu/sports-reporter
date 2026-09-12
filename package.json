@@ -6,7 +6,9 @@
   "description": "Ranks the next seven days of sport by how much you personally should care.",
   "scripts": {
     "start": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"test/**/*.test.ts\"",
+    "test:watch": "node --import tsx --test --watch \"test/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.test.json",
     "build": "tsc"
   },
   "engines": {

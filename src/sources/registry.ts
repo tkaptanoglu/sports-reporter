@@ -18,9 +18,15 @@ export const sources: EventSource[] = [theSportsDb, espnScoreboard, rssFixtures]
  *
  * A source that throws is logged and skipped. Losing one feed should cost you
  * some events, never the whole run.
+ *
+ * `from` defaults to the real registry and exists so tests can supply their own
+ * sources without reaching into module state.
  */
-export async function collectEvents(request: FetchRequest): Promise<SportEvent[]> {
-  const relevant = sources.filter((source) => sourceCovers(source, request.sports));
+export async function collectEvents(
+  request: FetchRequest,
+  from: EventSource[] = sources,
+): Promise<SportEvent[]> {
+  const relevant = from.filter((source) => sourceCovers(source, request.sports));
 
   if (relevant.length === 0) {
     log.warn('No source covers any of your sports.');
