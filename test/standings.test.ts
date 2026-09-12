@@ -84,9 +84,45 @@ describe('detectStandingsFlags', () => {
     assert.deepEqual(detectStandingsFlags(between(1, 2), table(12)), ['top-of-table']);
   });
 
-  test('flags a fixture between two sides in the drop zone, but only after halfway', () => {
-    assert.deepEqual(detectStandingsFlags(between(18, 19), table(25)), ['relegation-decider']);
+  test('flags a six-pointer near the bottom from halfway, but not before', () => {
+    // The mirror of top-of-table: two sides in the same predicament, at the
+    // point in the season where the predicament is real.
+    assert.deepEqual(detectStandingsFlags(between(18, 19), table(25)), ['relegation-battle']);
     assert.deepEqual(detectStandingsFlags(between(18, 19), table(12)), []);
+  });
+
+  test('catches a six-pointer just above the drop zone', () => {
+    // 16th against 17th is exactly the fixture this is for, and a band drawn
+    // only around the relegation places themselves would miss it.
+    assert.deepEqual(detectStandingsFlags(between(16, 17), table(25)), ['relegation-battle']);
+  });
+
+  test('escalates to a decider when both sides are in the drop zone late on', () => {
+    // The bottom gets the same two tiers as the top: a six-pointer that
+    // becomes a decider, rather than one flag that never escalates.
+    assert.deepEqual(detectStandingsFlags(between(19, 20), table(31)), ['relegation-decider']);
+  });
+
+  test('stays a six-pointer late on when only one side is actually in the drop', () => {
+    // 16th is fighting, but it is not yet down there with them.
+    assert.deepEqual(detectStandingsFlags(between(16, 19), table(31)), ['relegation-battle']);
+  });
+
+  test('never raises both bottom flags at once', () => {
+    for (const progress of [12, 25, 31, 38]) {
+      const flags = detectStandingsFlags(between(19, 20), table(progress));
+      assert.ok(
+        !(flags.includes('relegation-battle') && flags.includes('relegation-decider')),
+        `both bottom flags at ${progress} played`,
+      );
+    }
+  });
+
+  test('mirrors the top, which also never raises both of its flags at once', () => {
+    for (const progress of [12, 25, 31, 38]) {
+      const flags = detectStandingsFlags(between(1, 2), table(progress));
+      assert.ok(!(flags.includes('top-of-table') && flags.includes('title-decider')));
+    }
   });
 
   test('says nothing at all in the opening weeks', () => {

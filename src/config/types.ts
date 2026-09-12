@@ -23,6 +23,7 @@ export type ContextFlag =
   | 'trophy-decider'
   | 'promotion-decider'
   | 'relegation-decider'
+  | 'relegation-battle'
   | 'derby'
   | 'favourite'
   | 'top-of-table'

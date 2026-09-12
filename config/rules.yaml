@@ -71,7 +71,13 @@ context:
   title-decider: +2
   trophy-decider: +2
   promotion-decider: +1
-  relegation-decider: +1
+  # Two sides in the relegation places themselves, late on. The mirror of a
+  # title decider, and worth the same, because the drop is as decisive a
+  # thing to settle as the trophy.
+  relegation-decider: +2
+  # Two sides in the same predicament nearer the bottom, from halfway. The
+  # six-pointer, and the mirror of top-of-table.
+  relegation-battle: +1
   derby: +1
   # Both sides high in the table, a quarter of the season in or later.
   top-of-table: +1

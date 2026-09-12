@@ -17,18 +17,19 @@ Works end to end. Fetches, scores, ranks and prints.
 
 | Working | Not yet |
 | --- | --- |
-| Config loading | Standings-based context flags |
+| Config loading | The dead-rubber flag |
 | Timezone-aware day windows | |
-| All three data sources | |
+| All five data sources | |
 | Competition and stage matching | |
-| Derby and decider flags | |
+| Every other context flag | |
+| League standings | |
 | Significance and ranking | |
 | Terminal summary and HTML report | |
 
 Most context flags are live. `derby` and `title-decider` come from
 `config/context.yaml`; `favourite` and `preferred-division` from your interests;
-and `top-of-table`, `relegation-decider` and a second route to `title-decider`
-from league tables.
+and `top-of-table`, `relegation-battle`, `relegation-decider` and a second
+route to `title-decider` from league tables.
 
 Only `dead-rubber` remains, and it stays out on purpose. Proving nothing is at
 stake needs per-team arithmetic across every fixture left to play, not just a
@@ -48,8 +49,14 @@ because a table in August is noise:
 | Flag | Fires from | Condition |
 | --- | --- | --- |
 | top-of-table | a quarter in | both sides in the top 30% |
-| relegation-decider | halfway | both sides in the bottom 20% |
+| relegation-battle | halfway | both sides in the bottom 25% |
 | title-decider | three quarters in | both sides in the top two |
+| relegation-decider | three quarters in | both sides in the bottom 15% |
+
+Both ends of the table get the same two tiers: a six-pointer that becomes a
+decider. The bottom thresholds sit a little later because a relegation fight
+takes longer to become real than a title race. Each end resolves to one flag,
+the stronger where both would fit.
 
 Both sides always have to qualify. A leader playing a straggler is just a
 fixture. Season length is worked out from the size of the table rather than read
@@ -78,8 +85,7 @@ stage fired, each flag, and whether the total was clamped. Without it, tuning
 
 ## Sources
 
-Three of them, deliberately not overlapping. Two sources describing one fixture
-would produce two entries, because they arrive under different ids.
+Five of them, deliberately not overlapping.
 
 | Source | Sports | Notes |
 | --- | --- | --- |
@@ -121,7 +127,7 @@ calendar source exists for exactly this: point it at any `.ics` URL by creating
         url: https://example.org/whatever.ics
 
 **TheSportsDB's public test key returns at most three events per query** and
-starts refusing requests after a few dozen, so those six sports report a
+starts refusing requests after a few dozen, so those five sports report a
 fraction of what is on. That is their limit, not a bug here, and it is logged
 on every run. Set `THESPORTSDB_KEY` in the environment to use your own key.
 
@@ -147,12 +153,13 @@ when a week runs to two hundred fixtures. `reports/` is in `.gitignore`.
 
     npm test
 
-63 tests on Node's built-in runner, no test framework dependency. Watch mode is
+253 tests on Node's built-in runner, no test framework dependency. Watch mode is
 `npm run test:watch`.
 
-They cover what is actually written: day windows across timezones and clock
-changes, config loading, source orchestration, and the grouping and ranking in
-the report. Two things are worth knowing about how they are set up.
+They cover day windows across timezones and clock changes, config loading,
+source orchestration, every parser against a captured response from the live
+site, the scoring layers, and the grouping and ranking in the report. Two things
+are worth knowing about how they are set up.
 
 Most tests run against small fixtures in `test/fixtures/`, but `real-config.test.ts`
 asserts against the two YAML files that actually ship, so a stray tab or a
@@ -160,9 +167,8 @@ renamed sport fails in a second rather than halfway through a run. It checks
 your own `interests.yaml` too when it is present, and skips that one test when
 it is not, so the suite stays green on a fresh clone.
 
-The stubs are tested as well, asserting that they stop rather than return a
-plausible number. A scorer that quietly returned zero would look like a working
-program producing a boring week.
+The scrapers are tested against pages captured from the real sites, so a
+redesign at FIS or snooker.org breaks a test rather than a Sunday.
 
 To check that everything, tests included, still compiles:
 
