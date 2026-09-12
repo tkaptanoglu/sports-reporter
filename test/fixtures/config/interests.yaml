@@ -5,6 +5,13 @@ sports:
   tennis: 4
   quidditch: 5
 
+  # Long form, to exercise the division filter.
+  volleyball:
+    interest: 7
+    only: women
+    also:
+      - Sultanlar Ligi
+
 settings:
   timezone: Europe/Istanbul
   days_ahead: 3

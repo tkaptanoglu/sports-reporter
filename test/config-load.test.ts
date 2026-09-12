@@ -11,7 +11,7 @@ describe('loadConfig', () => {
   test('reads both files and returns them parsed', () => {
     const config = loadConfig(FIXTURES);
 
-    assert.equal(config.interests.sports['football'], 8);
+    assert.equal(config.interests.sports['football']?.interest, 8);
     assert.equal(config.interests.settings.timezone, 'Europe/Istanbul');
     assert.equal(config.rules.defaults.unknown_competition, 2);
     assert.equal(config.rules.sports['football']?.competitions['Premier League'], 6);

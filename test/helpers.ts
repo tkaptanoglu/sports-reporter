@@ -11,6 +11,7 @@ export function makeEvent(over: Partial<SportEvent> = {}): SportEvent {
     title: 'Home vs Away',
     startsAt: new Date('2026-09-12T18:00:00Z'),
     stage: null,
+    division: null,
     participants: ['Home', 'Away'],
     source: 'test',
     url: null,

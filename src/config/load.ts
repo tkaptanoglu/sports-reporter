@@ -2,7 +2,14 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { notImplemented } from '../util/todo.js';
-import type { InterestsConfig, LoadedConfig, RulesConfig, SportKey } from './types.js';
+import type {
+  InterestsConfig,
+  LoadedConfig,
+  RawInterestsConfig,
+  RulesConfig,
+  SportInterest,
+  SportKey,
+} from './types.js';
 
 const INTERESTS_FILE = 'interests.yaml';
 const RULES_FILE = 'rules.yaml';
@@ -30,10 +37,27 @@ export function loadConfig(dir = 'config'): LoadedConfig {
     throw new Error(`No ${RULES_FILE} found at ${rulesPath}.`);
   }
 
-  const interests = parse(readFileSync(interestsPath, 'utf8')) as InterestsConfig;
+  const raw = parse(readFileSync(interestsPath, 'utf8')) as RawInterestsConfig;
   const rules = parse(readFileSync(rulesPath, 'utf8')) as RulesConfig;
 
-  return { interests, rules };
+  return { interests: normaliseInterests(raw), rules };
+}
+
+/**
+ * Expands the short form of an interest entry into the long one.
+ *
+ * `football: 8` and `football: { interest: 8 }` mean the same thing, and doing
+ * this once here is what stops every consumer downstream having to ask which
+ * shape it received.
+ */
+function normaliseInterests(raw: RawInterestsConfig): InterestsConfig {
+  const sports: Record<SportKey, SportInterest> = {};
+
+  for (const [sport, value] of Object.entries(raw.sports ?? {})) {
+    sports[sport] = typeof value === 'number' ? { interest: value } : value;
+  }
+
+  return { sports, settings: raw.settings };
 }
 
 /**
@@ -49,7 +73,7 @@ export function unmatchedSportKeys(config: LoadedConfig): SportKey[] {
 
 /** Interest rating for a sport, or null when it is out of scope. */
 export function interestIn(config: LoadedConfig, sport: SportKey): number | null {
-  return config.interests.sports[sport] ?? null;
+  return config.interests.sports[sport]?.interest ?? null;
 }
 
 /**

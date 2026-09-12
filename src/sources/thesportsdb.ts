@@ -99,6 +99,9 @@ export function parseDay(body: SportsDbDay, coverage: Coverage): SportEvent[] {
       title: raw.strEvent ?? participants.join(' vs ') ?? 'Event',
       startsAt,
       stage: cleanStage(raw.strGroup),
+      // A whole-day feed across every league knows nothing about divisions, so
+      // the competition name is the only signal and it is read later.
+      division: null,
       participants,
       source: 'thesportsdb',
       url: null,

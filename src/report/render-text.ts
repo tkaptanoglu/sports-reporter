@@ -37,7 +37,8 @@ export function renderText(report: Report): string {
     // one, but a throttled or failed source looks identical from down here, and
     // three sports have no source at all. The log above says which happened.
     out.push('  Nothing found for these sports. Out of season, no source for them,');
-    out.push('  or a source failed. The log above will say which:');
+    out.push('  a source failed, or your division filter removed everything.');
+    out.push('  The log above will say which:');
     out.push(`    ${report.emptySports.join(', ')}`);
     out.push('');
   }

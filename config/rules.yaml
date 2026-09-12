@@ -253,6 +253,8 @@ sports:
 
   # ===================================================================
   volleyball:
+    # Women's competitions only, per interests.yaml. The men's Turkish
+    # league was removed from here because it can no longer match anything.
     competitions:
       Olympic Volleyball: 8
       FIVB World Championship: 7
@@ -260,7 +262,6 @@ sports:
       Volleyball Nations League: 5
       CEV Champions League: 5
       Sultanlar Ligi: 4
-      Efeler Ligi: 3
       CEV Cup: 2
 
   # ===================================================================

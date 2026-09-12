@@ -1,4 +1,4 @@
-import type { ContextFlag, SportKey } from '../config/types.js';
+import type { ContextFlag, Division, SportKey } from '../config/types.js';
 
 /**
  * One sporting event, normalised into a single shape regardless of which source
@@ -33,6 +33,15 @@ export interface SportEvent {
   startsAt: Date;
   /** Raw stage text from the source, e.g. "Semi-final". Null when it says nothing. */
   stage: string | null;
+  /**
+   * Which side of the sport this is, when the source knows for certain.
+   *
+   * Set only where it is a fact rather than a guess: ESPN knows it queried the
+   * WTA tour, not the ATP one. A whole-day feed covering every league knows
+   * nothing, so it leaves this null and the division has to be read out of the
+   * competition name instead.
+   */
+  division: Division | null;
   /** Two names for a match, many for a race, empty when not applicable. */
   participants: string[];
   /** Which source produced this record. */

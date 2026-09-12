@@ -12,9 +12,9 @@ import type { ScoredEvent, SportEvent } from '../model/event.js';
  * the behaviour you asked for.
  */
 export function scoreEvent(event: SportEvent, config: LoadedConfig): ScoredEvent {
-  const interest = config.interests.sports[event.sport];
+  const preference = config.interests.sports[event.sport];
 
-  if (interest === undefined) {
+  if (preference === undefined) {
     throw new Error(
       `Event ${event.id} is in "${event.sport}", which is not in interests.yaml. ` +
         `Out-of-scope sports should have been filtered out before scoring.`,
@@ -26,8 +26,8 @@ export function scoreEvent(event: SportEvent, config: LoadedConfig): ScoredEvent
   return {
     ...event,
     significance,
-    interest,
-    importance: interest * significance,
+    interest: preference.interest,
+    importance: preference.interest * significance,
     breakdown,
   };
 }

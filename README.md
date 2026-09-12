@@ -127,6 +127,26 @@ Two files in `config/`, both YAML with comments explaining themselves.
 timezone. It is deliberately not tracked in git, so it never leaves your
 machine. Copy `interests.example.yaml` to start one.
 
+Most sports run two parallel calendars, and you may follow only one. Swap the
+bare rating for the long form to take just that half:
+
+    volleyball:
+      interest: 7
+      only: women
+      also:
+        - Sultanlar Ligi
+
+Where a source knows for certain which side it queried, that is believed. ESPN
+asking the WTA endpoint is a fact, not a guess. Everywhere else the division is
+read out of the competition name, in several languages, so a whole-day feed
+still sorts "Mens European Volleyball Championship" from the women's one.
+
+A competition whose name gives nothing away is dropped, on the reasoning that
+one which does not call itself women's usually is not. `also` names the
+exceptions, for leagues like Sultanlar Ligi whose name says nothing either way.
+Every run reports how many events it removed and why, so nothing disappears
+quietly.
+
 `rules.yaml` is the scoring table: 21 sports and 239 competitions, each with a
 base score, plus stage adjustments and context flags. It is tracked, because it
 is the program's logic rather than personal data.

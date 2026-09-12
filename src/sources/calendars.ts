@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import { parse as parseYaml } from 'yaml';
 import { mapWithLimit, reportFailures } from './http.js';
 import { log } from '../util/log.js';
-import type { SportKey } from '../config/types.js';
+import type { Division, SportKey } from '../config/types.js';
 import type { SportEvent } from '../model/event.js';
 import type { EventSource, FetchRequest } from './types.js';
 
@@ -42,6 +42,8 @@ export interface CalendarFeed {
   competition?: string;
   /** Tried when `competition` has no rule. */
   fallback?: string;
+  /** Set it when the feed covers only one side of the sport. */
+  division?: Division;
 }
 
 interface CalendarsConfig {
@@ -171,6 +173,7 @@ export function toSportEvents(events: IcsEvent[], feed: CalendarFeed): SportEven
       title: summary,
       startsAt: event.start,
       stage: null,
+      division: feed.division ?? null,
       participants: [],
       source: 'calendar',
       url: feed.url,

@@ -151,7 +151,7 @@ function renderEmptySports(report: Report): string {
 
   return `<section class="note">
   <h2>Nothing found for these</h2>
-  <p>Out of season, no source for them, or a source failed. The terminal log says which.</p>
+  <p>Out of season, no source for them, a source failed, or your division filter removed everything. The terminal log says which.</p>
   <p class="tags">${report.emptySports.map((s) => `<span class="sport">${escape(s)}</span>`).join('')}</p>
 </section>`;
 }

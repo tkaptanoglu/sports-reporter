@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { loadConfig } from '../src/config/load.js';
 import { KNOWN_STAGE_KEYS } from '../src/scoring/stage.js';
-import type { InterestsConfig, RulesConfig } from '../src/config/types.js';
+import type { RawInterestsConfig, RulesConfig, SportInterest } from '../src/config/types.js';
 
 /**
  * Guards the two YAML files that actually ship, rather than fixtures.
@@ -19,9 +19,12 @@ import type { InterestsConfig, RulesConfig } from '../src/config/types.js';
  */
 
 const rules = parse(readFileSync('config/rules.yaml', 'utf8')) as RulesConfig;
-const example = parse(readFileSync('config/interests.example.yaml', 'utf8')) as InterestsConfig;
+const example = parse(readFileSync('config/interests.example.yaml', 'utf8')) as RawInterestsConfig;
 
 const isInteger = (n: unknown): boolean => typeof n === 'number' && Number.isInteger(n);
+
+/** interests.yaml allows a bare rating or the long form; both mean a rating. */
+const ratingOf = (v: number | SportInterest): number => (typeof v === 'number' ? v : v.interest);
 
 describe('config/rules.yaml', () => {
   test('every sport has at least one competition', () => {
@@ -102,7 +105,8 @@ describe('config/interests.example.yaml', () => {
 
   test('every interest rating is a whole number from 1 to 10', () => {
     for (const [sport, rating] of Object.entries(example.sports)) {
-      assert.ok(isInteger(rating) && rating >= 1 && rating <= 10, `${sport} is rated ${rating}`);
+      const n = ratingOf(rating);
+      assert.ok(isInteger(n) && n >= 1 && n <= 10, `${sport} is rated ${String(n)}`);
     }
   });
 
@@ -120,7 +124,8 @@ describe('config/interests.yaml', () => {
 
     for (const [sport, rating] of Object.entries(config.interests.sports)) {
       assert.ok(rules.sports[sport], `you list "${sport}", which has no rules entry`);
-      assert.ok(isInteger(rating) && rating >= 1 && rating <= 10, `${sport} is rated ${rating}`);
+      const n = ratingOf(rating);
+      assert.ok(isInteger(n) && n >= 1 && n <= 10, `${sport} is rated ${String(n)}`);
     }
   });
 });

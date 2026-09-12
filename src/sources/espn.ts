@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon';
 import { HttpError, fetchJson, mapWithLimit, reportFailures } from './http.js';
 import { log } from '../util/log.js';
-import type { SportKey } from '../config/types.js';
+import type { Division, SportKey } from '../config/types.js';
 import type { SportEvent } from '../model/event.js';
 import type { EventSource, FetchRequest } from './types.js';
 
@@ -36,6 +36,11 @@ export interface League {
   layout: Layout;
   /** Tried when `competition` has no rule. See SportEvent.competitionFallback. */
   fallback?: string;
+  /**
+   * Set where the endpoint itself settles it. Asking for the WTA tour and
+   * getting women's tennis back is a fact, not an inference from a name.
+   */
+  division?: Division;
 }
 
 /**
@@ -72,17 +77,17 @@ export const LEAGUES: League[] = [
   { sport: 'football', path: 'soccer/tur.2', competition: 'TFF 1. Lig', layout: 'team' },
 
   // --- Basketball
-  { sport: 'basketball', path: 'basketball/nba', competition: 'NBA', layout: 'team' },
-  { sport: 'basketball', path: 'basketball/wnba', competition: 'WNBA', layout: 'team' },
-  { sport: 'basketball', path: 'basketball/mens-college-basketball', competition: 'NCAA Tournament', layout: 'team' },
+  { sport: 'basketball', path: 'basketball/nba', competition: 'NBA', layout: 'team', division: 'men' },
+  { sport: 'basketball', path: 'basketball/wnba', competition: 'WNBA', layout: 'team', division: 'women' },
+  { sport: 'basketball', path: 'basketball/mens-college-basketball', competition: 'NCAA Tournament', layout: 'team', division: 'men' },
 
   // --- Motorsport
   { sport: 'formula1', path: 'racing/f1', competition: 'Formula 1 Grand Prix', layout: 'racing' },
 
   // --- Tennis. An unlisted tournament falls back to the lowest tour tier,
   //     which is closer to the truth than scoring it as an unknown.
-  { sport: 'tennis', path: 'tennis/atp', competition: 'ATP', layout: 'tennis', fallback: 'ATP 250' },
-  { sport: 'tennis', path: 'tennis/wta', competition: 'WTA', layout: 'tennis', fallback: 'WTA 250' },
+  { sport: 'tennis', path: 'tennis/atp', competition: 'ATP', layout: 'tennis', fallback: 'ATP 250', division: 'men' },
+  { sport: 'tennis', path: 'tennis/wta', competition: 'WTA', layout: 'tennis', fallback: 'WTA 250', division: 'women' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -163,6 +168,7 @@ export function parseTeamScoreboard(body: EspnScoreboard, league: League): Sport
       title,
       startsAt,
       stage: competition?.notes?.[0]?.headline ?? null,
+      division: league.division ?? null,
       participants: [home, away]
         .map((c) => c?.team?.displayName)
         .filter((n): n is string => n !== undefined),
@@ -202,6 +208,7 @@ export function parseRacingScoreboard(body: EspnScoreboard, league: League): Spo
         title: kind === null ? weekend : `${weekend}, ${sessionLabel(kind)}`,
         startsAt,
         stage: null,
+        division: league.division ?? null,
         participants: [],
         source: 'espn',
         url: event.links?.[0]?.href ?? null,
@@ -258,6 +265,7 @@ export function parseTennisScoreboard(
         title: round === null ? name : `${name}, ${round}`,
         startsAt,
         stage: round,
+        division: league.division ?? null,
         participants: [],
         source: 'espn',
         url: tournament.links?.[0]?.href ?? null,

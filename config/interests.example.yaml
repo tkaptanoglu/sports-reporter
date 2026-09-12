@@ -23,7 +23,21 @@
 #      If it does not, the app will say so on the next run instead of
 #      silently ignoring it.
 #
-#  THIS IS THE TEMPLATE, NOT YOUR CONFIG
+#  FOLLOWING ONLY ONE HALF OF A SPORT
+#    Most sports run two parallel calendars. To take only one, swap the bare
+#    number for the long form:
+#
+#      volleyball:
+#        interest: 7
+#        only: women        # or: men
+#        also:              # optional
+#          - Sultanlar Ligi
+#
+#    Events marked as the other division are dropped. So is anything that
+#    does not say which it is, because a competition that does not call
+#    itself women's usually is not one. `also` names the exceptions: leagues
+#    whose name gives nothing away. The run reports how many it dropped.
+##  THIS IS THE TEMPLATE, NOT YOUR CONFIG
 #    This file is tracked in git so that a fresh clone has something to
 #    copy. Your real config/interests.yaml is NOT tracked, so your own
 #    ratings never leave this machine. Copy this file to interests.yaml

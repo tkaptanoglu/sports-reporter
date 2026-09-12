@@ -5,6 +5,7 @@ import { renderText } from './report/render-text.js';
 import { writeHtmlReport } from './report/render-html.js';
 import { collectEvents } from './sources/registry.js';
 import { scoreEvent } from './scoring/importance.js';
+import { siftByDivision } from './scoring/division.js';
 import { buildWindow } from './util/days.js';
 import { log } from './util/log.js';
 
@@ -45,27 +46,56 @@ async function main(): Promise<void> {
   });
   log.info(`Collected ${events.length} events after deduplication.`);
 
-  // 5. Rate each one, and rank by what it is worth to you.
+  // 5. Drop the half of a sport you do not follow, before anything rates it.
+  const { kept, dropped } = siftByDivision(events, config.interests.sports);
+  for (const [sport, reasons] of summariseDrops(dropped)) {
+    const unstated =
+      reasons.unstated === 0
+        ? ''
+        : ` and ${reasons.unstated} that did not say which division they were`;
+    log.info(
+      `${sport}: ${config.interests.sports[sport]?.only ?? 'filtered'} only. ` +
+        `Dropped ${reasons.wrong} from the other division${unstated}.`,
+    );
+  }
+
+  // 6. Rate each one, and rank by what it is worth to you.
   let scored;
   try {
-    scored = events.map((event) => scoreEvent(event, config));
+    scored = kept.map((event) => scoreEvent(event, config));
   } catch (error) {
     // The sources work; the scorer does not yet. Rather than dying on the last
     // step, show what was fetched. The competition names below are the exact
     // strings rules.yaml has to match, so this is worth reading either way.
     if (error instanceof Error && error.message.startsWith('Not implemented yet')) {
       log.warn(`Cannot rank yet: ${error.message}. Showing what the sources returned instead.`);
-      console.log(renderSourceSummary(events, reportWindow.timezone));
+      console.log(renderSourceSummary(kept, reportWindow.timezone));
       return;
     }
     throw error;
   }
 
-  // 6. Arrange into days, print a summary, and write the page you actually read.
+  // 7. Arrange into days, print a summary, and write the page you actually read.
   const report = buildReport(scored, reportWindow, sports);
   console.log(renderText(report));
 
   log.info(`Report written to ${writeHtmlReport(report)}`);
+}
+
+/** Counts what the division filter removed, per sport, for one honest log line. */
+function summariseDrops(
+  dropped: ReturnType<typeof siftByDivision>['dropped'],
+): Array<[string, { wrong: number; unstated: number }]> {
+  const counts = new Map<string, { wrong: number; unstated: number }>();
+
+  for (const { event, reason } of dropped) {
+    const entry = counts.get(event.sport) ?? { wrong: 0, unstated: 0 };
+    if (reason === 'wrong-division') entry.wrong += 1;
+    else entry.unstated += 1;
+    counts.set(event.sport, entry);
+  }
+
+  return [...counts];
 }
 
 main().catch((error: unknown) => {
