@@ -127,6 +127,13 @@ describe('qualifying tournaments', () => {
     assert.equal(isQualifying('German Masters Quals'), true);
   });
 
+  test('recognises the shorthand the site uses once a qualifier is under way', () => {
+    // A running qualifier is labelled "Northern Ireland Open (q)". Missing this
+    // put a whole qualifying tournament in the report at main-draw strength.
+    assert.equal(isQualifying('Northern Ireland Open (q)'), true);
+    assert.equal(isQualifying('Scottish Open (Q)'), true);
+  });
+
   test('does not mistake a main-draw tournament for a qualifier', () => {
     for (const name of ['Northern Ireland Open', 'UK Championship', 'The Masters', 'Shoot Out']) {
       assert.equal(isQualifying(name), false, name);
@@ -136,6 +143,7 @@ describe('qualifying tournaments', () => {
   const qualifier = (name: string): Tournament => ({
     id: '1',
     name,
+    qualifying: isQualifying(name),
     from: DateTime.fromISO('2026-09-13', { zone: 'UTC' }),
     to: DateTime.fromISO('2026-09-16', { zone: 'UTC' }),
   });
@@ -159,5 +167,79 @@ describe('qualifying tournaments', () => {
 
     assert.equal(stageOf(main, 'Final'), 'Final');
     assert.equal(stageOf(main, null), null);
+  });
+});
+
+describe('a tournament linked under two labels', () => {
+  // Captured from the live index on the day the qualifiers started. The same
+  // event id is linked twice: as "Northern Ireland Open (q)" in the section for
+  // events under way, and as "Northern Ireland Open Qual" in the season
+  // calendar. Keeping only the first label let page order decide whether a
+  // qualifier was scored as one, and it flipped the day the event began.
+  const running = parseIndex(fixture('index-running-qualifier'), 2026);
+  // Selected by event id, not name: the main Northern Ireland Open in October
+  // shares the name and is a different tournament that must stay one.
+  const ni = running.filter((t) => t.id === '2770');
+  const mainEvent = running.find((t) => t.id === '2548');
+
+  test('the captured page really does contain both labels', () => {
+    // Guards the fixture itself, so this block cannot quietly stop testing
+    // the case it exists for.
+    const html = fixture('index-running-qualifier');
+    assert.match(html, /Northern Ireland Open \(q\)/);
+    assert.match(html, /Northern Ireland Open Qual/);
+  });
+
+  test('becomes a single tournament, not two', () => {
+    assert.equal(ni.length, 1);
+  });
+
+  test('is a qualifier whichever label happens to come first on the page', () => {
+    assert.equal(ni[0]?.qualifying, true);
+  });
+
+  test('is shown under its full name rather than the shorthand', () => {
+    assert.equal(ni[0]?.name, 'Northern Ireland Open Qual');
+  });
+
+  test('takes its dates from the label that carries a year', () => {
+    assert.equal(ni[0]?.from.toISODate(), '2026-09-13');
+    assert.equal(ni[0]?.to.toISODate(), '2026-09-16');
+  });
+
+  test('marks every match in it as qualifying', () => {
+    const tournament = ni[0];
+    assert.ok(tournament);
+    assert.equal(stageOf(tournament, 'Round 1'), 'Qualifying Round 1');
+  });
+
+  test('leaves the main event of the same name as a main event', () => {
+    // It shares every word of its name bar the marker. Merging by id rather
+    // than by name is what keeps it from being dragged down with its qualifier.
+    assert.ok(mainEvent, 'expected the October main event in the capture');
+    assert.equal(mainEvent.qualifying, false);
+    assert.equal(mainEvent.name, 'Northern Ireland Open');
+  });
+
+  test('still spots a qualifier when the first label uses a marker nobody taught it', () => {
+    // The real capture cannot test this on its own: both of its labels are
+    // recognisable, so reading only the first one happens to work. This is the
+    // case the merge exists for, where the site invents a new shorthand and
+    // lists it first, but another link to the same event still says "Qual".
+    const html = [
+      '<a href="index.asp?event=9999">Mystery Open [x] (1-3 Oct)</a>',
+      '<a href="index.asp?event=9999">Mystery Open Qual (1-3 Oct 2026)</a>',
+    ].join('\n');
+
+    const [mystery] = parseIndex(html, 2026);
+    assert.equal(mystery?.qualifying, true);
+    assert.equal(mystery?.name, 'Mystery Open Qual');
+  });
+
+  test('does not turn a main-draw event into a qualifier by association', () => {
+    for (const t of running) {
+      if (/\bqual|\(q\)/i.test(t.name)) continue;
+      assert.equal(t.qualifying, false, `${t.name} was marked as qualifying`);
+    }
   });
 });

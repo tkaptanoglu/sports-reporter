@@ -26,6 +26,11 @@ const BASE = 'https://www.snooker.org/res/index.asp';
 export interface Tournament {
   id: string;
   name: string;
+  /**
+   * Whether this is a qualifying tournament, decided from every label the site
+   * uses for it rather than from whichever one happened to come first.
+   */
+  qualifying: boolean;
   from: DateTime;
   to: DateTime;
 }
@@ -49,29 +54,56 @@ export interface DrawMatch {
  * means the season's opening year.
  */
 export function parseIndex(html: string, defaultYear: number): Tournament[] {
-  const seen = new Set<string>();
-  const tournaments: Tournament[] = [];
+  // The same tournament is often linked more than once under different labels.
+  // A running qualifier appears near the top as "Northern Ireland Open (q)" and
+  // again in the season calendar as "Northern Ireland Open Qual". Every label is
+  // gathered first, so no single one gets to decide what the tournament is.
+  const labels = new Map<string, Array<{ name: string; dates: string }>>();
 
-  for (const match of html.matchAll(
-    /index\.asp\?event=(\d+)[^>]*>([^<]{3,90})<\/a>/g,
-  )) {
+  for (const match of html.matchAll(/index\.asp\?event=(\d+)[^>]*>([^<]{3,90})<\/a>/g)) {
     const [, id, label] = match;
-    if (id === undefined || label === undefined || seen.has(id)) continue;
+    if (id === undefined || label === undefined) continue;
 
     const text = decode(label);
     const dates = text.match(/\(([^)]+)\)\s*$/)?.[1];
     const name = text.replace(/\s*\([^)]*\)\s*$/, '').trim();
     if (dates === undefined || name.length === 0) continue;
 
-    const range = parseDates(dates, defaultYear);
+    const list = labels.get(id) ?? [];
+    list.push({ name, dates });
+    labels.set(id, list);
+  }
+
+  const tournaments: Tournament[] = [];
+
+  for (const [id, found] of labels) {
+    // Which label came first depends only on which section of the page it sits
+    // in, and a tournament moves between sections as it starts. If any label
+    // says qualifier, it is one.
+    const qualifying = found.some((label) => isQualifying(label.name));
+
+    // Show the most descriptive name: for a qualifier, the label that spells it
+    // out, so the report never shows a shorthand the reader has to decode.
+    // Otherwise any label that is not the shorthand. Dates come from a label
+    // that carries a year where one does.
+    const named =
+      found.find((label) => isQualifying(label.name) && !SHORTHAND.test(label.name)) ??
+      found.find((label) => !SHORTHAND.test(label.name)) ??
+      found[0];
+    const dated = found.find((label) => /\d{4}/.test(label.dates)) ?? named;
+    if (named === undefined || dated === undefined) continue;
+
+    const range = parseDates(dated.dates, defaultYear);
     if (range === null) continue;
 
-    seen.add(id);
-    tournaments.push({ id, name, ...range });
+    tournaments.push({ id, name: named.name, qualifying, ...range });
   }
 
   return tournaments;
 }
+
+/** The site's shorthand for a qualifying event, as in "Northern Ireland Open (q)". */
+const SHORTHAND = /\(q\)/i;
 
 /** "7-13 Sep", "31 Oct - 7 Nov 2026", "10-17 Jan 2027". */
 export function parseDates(
@@ -197,7 +229,9 @@ export const snookerOrg: EventSource = {
  * this, a qualifying final scored exactly like a ranking final.
  */
 export function isQualifying(name: string): boolean {
-  return /\bqual(s|if\w*)?\b/i.test(name);
+  // The spelled-out forms and the site's own shorthand. The shorthand is what a
+  // qualifier is called once it is under way, which is exactly when it matters.
+  return /\bqual(s|if\w*)?\b/i.test(name) || SHORTHAND.test(name);
 }
 
 /**
@@ -208,7 +242,7 @@ export function isQualifying(name: string): boolean {
  * pattern, so the prefix is what wins.
  */
 export function stageOf(tournament: Tournament, round: string | null): string | null {
-  if (!isQualifying(tournament.name)) return round;
+  if (!tournament.qualifying) return round;
   return round === null ? 'Qualifying' : `Qualifying ${round}`;
 }
 
