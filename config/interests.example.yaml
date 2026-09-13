@@ -37,6 +37,15 @@
 #    does not say which it is, because a competition that does not call
 #    itself women's usually is not one. `also` names the exceptions: leagues
 #    whose name gives nothing away. The run reports how many it dropped.
+#
+#    To keep both sides but care less about one, give that side its own
+#    rating. It replaces `interest` only for games known to be on that side;
+#    a game whose name does not say keeps the ordinary rating:
+#
+#      volleyball:
+#        interest: 7
+#        interest_by_division:
+#          men: 3
 ##  THIS IS THE TEMPLATE, NOT YOUR CONFIG
 #    This file is tracked in git so that a fresh clone has something to
 #    copy. Your real config/interests.yaml is NOT tracked, so your own

@@ -1,4 +1,4 @@
-import { loadConfig, unmatchedSportKeys } from './config/load.js';
+import { loadConfig, unknownDivisionKeys, unmatchedSportKeys } from './config/load.js';
 import { buildReport } from './report/build.js';
 import { renderSourceSummary } from './report/render-sources.js';
 import { renderText } from './report/render-text.js';
@@ -24,6 +24,10 @@ async function main(): Promise<void> {
   const unmatched = unmatchedSportKeys(config);
   for (const key of unmatched) {
     log.warn(`"${key}" is in interests.yaml but has no entry in rules.yaml, so it is skipped.`);
+  }
+
+  for (const { sport, key } of unknownDivisionKeys(config)) {
+    log.warn(`"${key}" under ${sport}.interest_by_division is not a division. Use women or men.`);
   }
 
   const sports = Object.keys(config.interests.sports).filter((key) => !unmatched.includes(key));

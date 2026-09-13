@@ -6,7 +6,7 @@ import { detectContextFlags } from '../src/scoring/context-flags.js';
 import { matchCompetition } from '../src/scoring/match-competition.js';
 import { scoreSignificance } from '../src/scoring/significance.js';
 import { matchStage } from '../src/scoring/stage.js';
-import { scoreEvent } from '../src/scoring/importance.js';
+import { interestFor, scoreEvent } from '../src/scoring/importance.js';
 import { normalise } from '../src/scoring/text.js';
 import { notImplemented } from '../src/util/todo.js';
 import { makeEvent } from './helpers.js';
@@ -269,6 +269,60 @@ describe('scoreEvent', () => {
       () => scoreEvent(makeEvent({ sport: 'curling' }), config),
       /not in interests\.yaml/,
     );
+  });
+});
+
+describe('interestFor', () => {
+  // Volleyball as configured: 7 across the sport, 3 for a men's game.
+  const volleyball = { interest: 7, prefer: 'women' as const, interest_by_division: { men: 3 } };
+  const game = (competition: string, division: 'women' | 'men' | null = null) =>
+    makeEvent({ sport: 'volleyball', competition, division });
+
+  test('gives a men’s game the men’s rating', () => {
+    assert.deepEqual(interestFor(game('Mens European Volleyball Championship'), volleyball), {
+      interest: 3,
+      interestDivision: 'men',
+    });
+  });
+
+  test('leaves a women’s game at the ordinary rating', () => {
+    assert.deepEqual(interestFor(game('Womens European Volleyball Championship'), volleyball), {
+      interest: 7,
+      interestDivision: null,
+    });
+  });
+
+  test('keeps the ordinary rating for a game whose name does not say which side it is', () => {
+    // Lowering it for being possibly men's would quietly demote women's games
+    // whose feed simply left the marker off.
+    assert.deepEqual(interestFor(game('German 1. Bundesliga'), volleyball), {
+      interest: 7,
+      interestDivision: null,
+    });
+  });
+
+  test('believes a source that knows the division over a name that does not say', () => {
+    assert.equal(interestFor(game('Nations League', 'men'), volleyball).interest, 3);
+  });
+
+  test('changes nothing for a sport with no per-division rating', () => {
+    const plain = { interest: 8 };
+    assert.equal(interestFor(game('Mens European Volleyball Championship'), plain).interest, 8);
+  });
+
+  test('carries the division rating through to the importance', () => {
+    const configured = {
+      ...config,
+      interests: {
+        ...config.interests,
+        sports: { ...config.interests.sports, volleyball },
+      },
+    };
+    const mens = scoreEvent(game('European Volleyball Championship Mens'), configured);
+
+    assert.equal(mens.interest, 3);
+    assert.equal(mens.interestDivision, 'men');
+    assert.equal(mens.importance, mens.significance * 3);
   });
 });
 

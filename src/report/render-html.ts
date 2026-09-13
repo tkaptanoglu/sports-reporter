@@ -135,7 +135,7 @@ function renderWorkings(event: ScoredEvent): string {
 
   parts.push(
     `<strong>Significance ${event.significance}</strong> &times; your interest ${event.interest} ` +
-      `in ${escape(event.sport)} = <strong>${event.importance}</strong>.`,
+      `in ${event.interestDivision === null ? '' : `${event.interestDivision}’s `}${escape(event.sport)} = <strong>${event.importance}</strong>.`,
   );
 
   const link =

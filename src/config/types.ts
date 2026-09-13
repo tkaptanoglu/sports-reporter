@@ -92,6 +92,16 @@ export interface SportInterest {
    * sits below the women's one.
    */
   prefer?: Division;
+  /**
+   * A different interest for one side of the sport, replacing `interest` for
+   * events known to belong to it.
+   *
+   * Only an event positively identified as that division is affected. A
+   * competition whose name gives no clue keeps the ordinary `interest`, because
+   * lowering a game for being possibly men's would quietly demote women's
+   * fixtures whose feed simply forgot to say so.
+   */
+  interest_by_division?: Partial<Record<Division, number>>;
 }
 
 /** interests.yaml exactly as written: bare forms allowed throughout. */

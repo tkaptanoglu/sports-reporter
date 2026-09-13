@@ -74,6 +74,19 @@ describe('renderHtml', () => {
     assert.match(html, /Significance 6<\/strong> &times; your interest 8/);
   });
 
+  test('names the division when its own rating was used', () => {
+    // Otherwise a men's game would show "your interest 3 in volleyball" beside
+    // a config file that plainly says 7.
+    const page = renderHtml(
+      report([makeScored({ sport: 'volleyball', interest: 3, interestDivision: 'men', importance: 18 })], ['volleyball']),
+    );
+    assert.match(page, /your interest 3 in men’s volleyball/);
+  });
+
+  test('says nothing about division when the ordinary rating was used', () => {
+    assert.doesNotMatch(html, /’s football/);
+  });
+
   test('says plainly when a competition had no rule', () => {
     const unrated = { matchedCompetition: null, base: 1, stageKey: null, stageAdjustment: 0, flags: [], clamped: false };
     const page = renderHtml(report([makeScored({ competition: 'Kit Kat Cup', breakdown: unrated })]));

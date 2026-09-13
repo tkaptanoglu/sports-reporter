@@ -34,6 +34,7 @@ export function makeScored(over: Partial<ScoredEvent> = {}): ScoredEvent {
     ...makeEvent(over),
     significance: 6,
     interest: 8,
+    interestDivision: null,
     importance: 48,
     breakdown,
     ...over,

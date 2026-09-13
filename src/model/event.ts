@@ -67,8 +67,14 @@ export interface ScoreBreakdown {
 export interface ScoredEvent extends SportEvent {
   /** 0 to 10, judged within the sport. */
   significance: number;
-  /** 1 to 10, straight from interests.yaml. */
+  /** 1 to 10, from interests.yaml. */
   interest: number;
+  /**
+   * The division whose own interest was used, when interests.yaml sets one for
+   * it. Kept so the report can say "your interest 3 in men's volleyball" rather
+   * than showing a number that contradicts the plain rating in the file.
+   */
+  interestDivision: Division | null;
   /** interest * significance. This is what the report sorts on. */
   importance: number;
   breakdown: ScoreBreakdown;

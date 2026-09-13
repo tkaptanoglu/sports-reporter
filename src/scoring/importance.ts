@@ -1,5 +1,6 @@
+import { divisionOf } from './division.js';
 import { scoreSignificance } from './significance.js';
-import type { LoadedConfig } from '../config/types.js';
+import type { Division, LoadedConfig, SportInterest } from '../config/types.js';
 import type { ScoredEvent, SportEvent } from '../model/event.js';
 import type { Tables } from '../standings/types.js';
 
@@ -27,12 +28,34 @@ export function scoreEvent(
   }
 
   const { significance, breakdown } = scoreSignificance(event, config, tables);
+  const { interest, interestDivision } = interestFor(event, preference);
 
   return {
     ...event,
     significance,
-    interest: preference.interest,
-    importance: preference.interest * significance,
+    interest,
+    interestDivision,
+    importance: interest * significance,
     breakdown,
   };
+}
+
+/**
+ * Your interest in this particular event.
+ *
+ * Usually just the sport's rating. Where interests.yaml gives one side of the
+ * sport its own rating and the event is known to be on that side, that rating
+ * is used instead. An event whose division cannot be told keeps the ordinary
+ * rating rather than being guessed into either.
+ */
+export function interestFor(
+  event: SportEvent,
+  preference: SportInterest,
+): { interest: number; interestDivision: Division | null } {
+  const division = divisionOf(event);
+  const override = division === null ? undefined : preference.interest_by_division?.[division];
+
+  return override === undefined
+    ? { interest: preference.interest, interestDivision: null }
+    : { interest: override, interestDivision: division };
 }

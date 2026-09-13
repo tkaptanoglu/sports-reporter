@@ -105,6 +105,26 @@ export function unmatchedSportKeys(config: LoadedConfig): SportKey[] {
   return Object.keys(config.interests.sports).filter((key) => !known.has(key));
 }
 
+/**
+ * Division names in interest_by_division that are not real divisions.
+ *
+ * "mens: 3" or "male: 3" would otherwise be read, ignored, and leave every men's
+ * game at the full rating with nothing to say why. Reported the same way as a
+ * misspelled sport.
+ */
+export function unknownDivisionKeys(config: LoadedConfig): Array<{ sport: SportKey; key: string }> {
+  const valid = new Set<string>(['women', 'men']);
+  const found: Array<{ sport: SportKey; key: string }> = [];
+
+  for (const [sport, preference] of Object.entries(config.interests.sports)) {
+    for (const key of Object.keys(preference.interest_by_division ?? {})) {
+      if (!valid.has(key)) found.push({ sport, key });
+    }
+  }
+
+  return found;
+}
+
 /** Interest rating for a sport, or null when it is out of scope. */
 export function interestIn(config: LoadedConfig, sport: SportKey): number | null {
   return config.interests.sports[sport]?.interest ?? null;

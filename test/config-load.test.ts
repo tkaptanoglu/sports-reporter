@@ -4,7 +4,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DateTime } from 'luxon';
-import { DEFAULT_SETTINGS, interestIn, loadConfig, unmatchedSportKeys, validateConfig } from '../src/config/load.js';
+import { DEFAULT_SETTINGS, interestIn, loadConfig, unknownDivisionKeys, unmatchedSportKeys, validateConfig } from '../src/config/load.js';
 
 const FIXTURES = join('test', 'fixtures', 'config');
 
@@ -94,6 +94,25 @@ describe('unmatchedSportKeys', () => {
     delete config.interests.sports['quidditch'];
 
     assert.deepEqual(unmatchedSportKeys(config), []);
+  });
+});
+
+describe('unknownDivisionKeys', () => {
+  test('catches a misspelled division that would otherwise do nothing', () => {
+    // "mens: 3" parses fine and is simply never read, leaving every men's game
+    // at the full rating with no hint why.
+    const config = loadConfig(FIXTURES);
+    config.interests.sports['football'] = { interest: 8, interest_by_division: { men: 3 } };
+    (config.interests.sports['football'].interest_by_division as Record<string, number>)['mens'] = 3;
+
+    assert.deepEqual(unknownDivisionKeys(config), [{ sport: 'football', key: 'mens' }]);
+  });
+
+  test('accepts the two real divisions', () => {
+    const config = loadConfig(FIXTURES);
+    config.interests.sports['football'] = { interest: 8, interest_by_division: { men: 3, women: 9 } };
+
+    assert.deepEqual(unknownDivisionKeys(config), []);
   });
 });
 

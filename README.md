@@ -158,7 +158,7 @@ complete report rather than a broken one. `reports/` is in `.gitignore`.
 
     npm test
 
-279 tests on Node's built-in runner, no test framework dependency. Watch mode is
+299 tests on Node's built-in runner, no test framework dependency. Watch mode is
 `npm run test:watch`.
 
 They cover day windows across timezones and clock changes, config loading,
@@ -194,6 +194,19 @@ a bonus, so a men's Olympic final still reaches you below the women's one:
     volleyball:
       interest: 7
       prefer: women
+
+To care less about one side rather than give the other a bonus, rate it
+separately. The rating replaces `interest` only for a game known to be on that
+side, and the report says so, as in "your interest 3 in men's volleyball":
+
+    volleyball:
+      interest: 7
+      interest_by_division:
+        men: 3
+
+A game whose name does not say which side it is keeps the ordinary rating
+rather than being guessed into the lower one. A misspelled division such as
+`mens` is reported at the start of the run instead of being silently ignored.
 
 `only` is the stricter form. It throws the other side away entirely, along with
 anything that does not say which it is, and `also` names the exceptions:

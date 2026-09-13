@@ -153,6 +153,13 @@ describe('config/interests.yaml', () => {
       assert.ok(rules.sports[sport], `you list "${sport}", which has no rules entry`);
       const n = ratingOf(rating);
       assert.ok(isInteger(n) && n >= 1 && n <= 10, `${sport} is rated ${String(n)}`);
+
+      // A per-division rating is still a rating, and a misspelled division
+      // would be read and silently ignored.
+      for (const [division, value] of Object.entries(rating.interest_by_division ?? {})) {
+        assert.ok(['women', 'men'].includes(division), `${sport} names an unknown division "${division}"`);
+        assert.ok(isInteger(value) && value >= 1 && value <= 10, `${sport} rates ${division} at ${String(value)}`);
+      }
     }
   });
 });
