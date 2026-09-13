@@ -2,7 +2,9 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { COVERAGE, parseDay } from '../src/sources/thesportsdb.js';
+import { loadConfig } from '../src/config/load.js';
+import { scoreSignificance } from '../src/scoring/significance.js';
+import { COVERAGE, parseDay, splitRace } from '../src/sources/thesportsdb.js';
 import type { Coverage, SportsDbDay } from '../src/sources/thesportsdb.js';
 
 const fixture = JSON.parse(
@@ -45,6 +47,103 @@ describe('the coverage table', () => {
     for (const sport of ['alpine-skiing', 'curling']) {
       assert.ok(!claimed.includes(sport));
     }
+  });
+});
+
+describe('splitRace', () => {
+  test('separates a grand tour from its stage', () => {
+    assert.deepEqual(splitRace('Vuelta a España Stage 21'), { race: 'Vuelta a España', stage: 'Stage 21' });
+  });
+
+  test('copes with the separators feeds put between race and stage', () => {
+    assert.deepEqual(splitRace('Tour de France - Stage 5'), { race: 'Tour de France', stage: 'Stage 5' });
+    assert.deepEqual(splitRace('Tour de Pologne, Stage 3'), { race: 'Tour de Pologne', stage: 'Stage 3' });
+  });
+
+  test('ignores what follows the stage number', () => {
+    assert.deepEqual(splitRace("Giro d'Italia Stage 12 (ITT)"), { race: "Giro d'Italia", stage: 'Stage 12' });
+  });
+
+  test('reads a prologue as a stage', () => {
+    assert.deepEqual(splitRace('Paris-Nice Prologue'), { race: 'Paris-Nice', stage: 'Prologue' });
+  });
+
+  test('never splits a hyphenated race name at its hyphen', () => {
+    assert.deepEqual(splitRace('Liège-Bastogne-Liège'), { race: 'Liège-Bastogne-Liège', stage: null });
+  });
+
+  test('returns a one-day race whole', () => {
+    assert.deepEqual(splitRace('Grand Prix Cycliste de Montréal'), {
+      race: 'Grand Prix Cycliste de Montréal',
+      stage: null,
+    });
+  });
+});
+
+describe('cycling races filed under their series', () => {
+  // Captured shape: the feed files every race under "UCI World Tour" and names
+  // the race only in the event title. Scoring the series put the last stage of
+  // a grand tour at the level of an ordinary World Tour race.
+  const cycling = COVERAGE.find((c) => c.sport === 'cycling');
+  const fixture = loadConfig(join('test', 'fixtures', 'config'));
+
+  const day = (league: string, event: string): SportsDbDay => ({
+    events: [{ idEvent: '1', strLeague: league, strEvent: event, strTimestamp: '2026-09-13T16:23:00' }],
+  });
+
+  test('scores the race named in the title, not the series it is filed under', () => {
+    assert.ok(cycling);
+    const [stage] = parseDay(day('UCI World Tour', 'Vuelta a España Stage 21'), cycling);
+
+    assert.equal(stage?.competition, 'Vuelta a España');
+    assert.equal(stage?.competitionFallback, 'UCI World Tour');
+    assert.equal(stage?.stage, 'Stage 21');
+  });
+
+  test('a grand tour stage now scores by the grand tour rule', () => {
+    assert.ok(cycling);
+    const [stage] = parseDay(day('UCI World Tour', 'Vuelta a España Stage 12'), cycling);
+    assert.ok(stage);
+
+    const result = scoreSignificance(stage, fixture);
+    assert.equal(result.breakdown.matchedCompetition, 'Vuelta a España');
+    assert.equal(result.breakdown.base, 6);
+  });
+
+  test('a race with no rule of its own still scores at its series level', () => {
+    assert.ok(cycling);
+    const [oneDay] = parseDay(day('UCI World Tour', 'Grand Prix Cycliste de Montréal'), cycling);
+    assert.ok(oneDay);
+
+    const result = scoreSignificance(oneDay, fixture);
+    assert.equal(result.breakdown.matchedCompetition, 'UCI World Tour');
+    assert.equal(result.breakdown.base, 3);
+  });
+
+  test('a race falls back to its own series, not always the World Tour', () => {
+    // A ProSeries race with no rule of its own should score at ProSeries level.
+    assert.ok(cycling);
+    const [race] = parseDay(day('UCI ProSeries', 'Tour of Norway Stage 2'), cycling);
+    assert.ok(race);
+
+    const result = scoreSignificance(race, fixture);
+    assert.equal(result.breakdown.matchedCompetition, 'UCI ProSeries');
+    assert.equal(result.breakdown.base, 2);
+  });
+
+  test('keeps the title intact, so the stage 21 decider still finds its stage', () => {
+    assert.ok(cycling);
+    const [stage] = parseDay(day('UCI World Tour', 'Vuelta a España Stage 21'), cycling);
+    assert.equal(stage?.title, 'Vuelta a España Stage 21');
+  });
+
+  test('leaves a single event such as the world championships under its own name', () => {
+    // The worlds is one competition with several races in it, not a series of
+    // separate races, so the discipline in the title is not the competition.
+    assert.ok(cycling);
+    const [worlds] = parseDay(day('UCI Road World Championships', 'Womens Elite Individual Time Trial'), cycling);
+
+    assert.equal(worlds?.competition, 'UCI Road World Championships');
   });
 });
 

@@ -69,3 +69,12 @@ sports:
     competitions:
       European Volleyball Championship: 6
       Sultanlar Ligi: 4
+
+  cycling:
+    # A grand tour sitting beside the series it is filed under, to prove the
+    # race is scored rather than the series.
+    competitions:
+      Vuelta a España: 6
+      UCI World Tour: 3
+      UCI ProSeries: 2
+      UCI Road World Championships: 7

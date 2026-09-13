@@ -41,6 +41,17 @@ export interface Coverage {
   leagues?: string[];
   /** Keeps only leagues matching this, for sports they lump together. */
   leagueFilter?: RegExp;
+  /**
+   * Leagues that are really a calendar of separate races.
+   *
+   * The feed files every cycling race under its series, "UCI World Tour", and
+   * names the race itself only in the event title: "Vuelta a España Stage 21".
+   * Scoring the series meant every grand tour stage scored like an ordinary
+   * World Tour race. For a league matching this, the race named in the title
+   * becomes the competition and the series becomes its fallback, so a race
+   * with its own rule is scored by that rule.
+   */
+  racesIn?: RegExp;
   /** Tried when the league name itself has no rule. */
   fallback?: string;
 }
@@ -52,7 +63,14 @@ export interface Coverage {
  * returns nothing for them on any date tried, in or out of season.
  */
 export const COVERAGE: Coverage[] = [
-  { sport: 'cycling', theirSport: 'Cycling', fallback: 'UCI World Tour' },
+  // The World Tour and ProSeries are calendars of independent races. The world
+  // championships are one event, so they keep their league as the competition.
+  {
+    sport: 'cycling',
+    theirSport: 'Cycling',
+    racesIn: /\b(world ?tour|pro ?series)\b/i,
+    fallback: 'UCI World Tour',
+  },
   { sport: 'athletics', theirSport: 'Athletics', fallback: 'World Athletics Continental Tour' },
   { sport: 'volleyball', theirSport: 'Volleyball' },
   { sport: 'handball', theirSport: 'Handball' },
@@ -109,14 +127,22 @@ export function parseDay(body: SportsDbDay, coverage: Coverage): SportEvent[] {
       (n): n is string => typeof n === 'string' && n.length > 0,
     );
 
+    const title = raw.strEvent ?? participants.join(' vs ') ?? 'Event';
+
+    // A series league holds many races, and the race is what gets scored. The
+    // series stays on as the fallback, so a race nobody has written a rule for
+    // still scores at its series' level rather than as an unknown.
+    const racing = coverage.racesIn !== undefined && coverage.racesIn.test(league);
+    const { race, stage: raceStage } = racing ? splitRace(title) : { race: league, stage: null };
+
     events.push({
       id: `thesportsdb:${raw.idEvent}`,
       sport: coverage.sport,
-      competition: league,
-      competitionFallback: coverage.fallback ?? null,
-      title: raw.strEvent ?? participants.join(' vs ') ?? 'Event',
+      competition: race,
+      competitionFallback: racing ? league : (coverage.fallback ?? null),
+      title,
       startsAt,
-      stage: cleanStage(raw.strGroup),
+      stage: raceStage ?? cleanStage(raw.strGroup),
       // A whole-day feed across every league knows nothing about divisions, so
       // the competition name is the only signal and it is read later.
       division: null,
@@ -201,6 +227,28 @@ function toDate(raw: SportsDbEvent): Date | null {
   }
 
   return null;
+}
+
+/**
+ * Separates a race from the stage of it an event title describes.
+ *
+ * "Vuelta a España Stage 21" is the Vuelta, on stage 21. A one-day race such as
+ * "Grand Prix Cycliste de Montréal" has no stage and is returned whole. The
+ * word "stage" is required, so a hyphenated race name like Paris-Nice is never
+ * split at its hyphen.
+ */
+export function splitRace(title: string): { race: string; stage: string | null } {
+  const staged = title.match(/^(.+?)[\s,:\-–—]+(?:stage|etapa|tappa|étape|etappe)\s*(\d+)\b/i);
+  if (staged?.[1] !== undefined && staged[2] !== undefined) {
+    return { race: staged[1].trim(), stage: `Stage ${staged[2]}` };
+  }
+
+  const prologue = title.match(/^(.+?)[\s,:\-–—]+prologue\b/i);
+  if (prologue?.[1] !== undefined) {
+    return { race: prologue[1].trim(), stage: 'Prologue' };
+  }
+
+  return { race: title.trim(), stage: null };
 }
 
 /** They use an empty string rather than null for "no stage". */
