@@ -87,30 +87,30 @@ describe('detectStandingsFlags', () => {
   test('flags a six-pointer near the bottom from halfway, but not before', () => {
     // The mirror of top-of-table: two sides in the same predicament, at the
     // point in the season where the predicament is real.
-    assert.deepEqual(detectStandingsFlags(between(18, 19), table(25)), ['relegation-battle']);
-    assert.deepEqual(detectStandingsFlags(between(18, 19), table(12)), []);
+    assert.deepEqual(detectStandingsFlags(between(18, 19), table(25), true), ['relegation-battle']);
+    assert.deepEqual(detectStandingsFlags(between(18, 19), table(12), true), []);
   });
 
   test('catches a six-pointer just above the drop zone', () => {
     // 16th against 17th is exactly the fixture this is for, and a band drawn
     // only around the relegation places themselves would miss it.
-    assert.deepEqual(detectStandingsFlags(between(16, 17), table(25)), ['relegation-battle']);
+    assert.deepEqual(detectStandingsFlags(between(16, 17), table(25), true), ['relegation-battle']);
   });
 
   test('escalates to a decider when both sides are in the drop zone late on', () => {
     // The bottom gets the same two tiers as the top: a six-pointer that
     // becomes a decider, rather than one flag that never escalates.
-    assert.deepEqual(detectStandingsFlags(between(19, 20), table(31)), ['relegation-decider']);
+    assert.deepEqual(detectStandingsFlags(between(19, 20), table(31), true), ['relegation-decider']);
   });
 
   test('stays a six-pointer late on when only one side is actually in the drop', () => {
     // 16th is fighting, but it is not yet down there with them.
-    assert.deepEqual(detectStandingsFlags(between(16, 19), table(31)), ['relegation-battle']);
+    assert.deepEqual(detectStandingsFlags(between(16, 19), table(31), true), ['relegation-battle']);
   });
 
   test('never raises both bottom flags at once', () => {
     for (const progress of [12, 25, 31, 38]) {
-      const flags = detectStandingsFlags(between(19, 20), table(progress));
+      const flags = detectStandingsFlags(between(19, 20), table(progress), true);
       assert.ok(
         !(flags.includes('relegation-battle') && flags.includes('relegation-decider')),
         `both bottom flags at ${progress} played`,
@@ -129,7 +129,23 @@ describe('detectStandingsFlags', () => {
     // Three games in, the table is noise. Flagging it would be worse than
     // flagging nothing, because it would look authoritative.
     assert.deepEqual(detectStandingsFlags(between(1, 2), table(3)), []);
-    assert.deepEqual(detectStandingsFlags(between(19, 20), table(3)), []);
+    assert.deepEqual(detectStandingsFlags(between(19, 20), table(3), true), []);
+  });
+
+  test('raises no relegation flag in a league nobody is relegated from', () => {
+    // Nobody goes down from MLS or the NBA. Calling a bottom-of-the-table
+    // fixture there a relegation decider is not a tuning question, it is
+    // false, so the flags are off unless a competition is listed as having
+    // relegation at all.
+    assert.deepEqual(detectStandingsFlags(between(19, 20), table(31)), []);
+    assert.deepEqual(detectStandingsFlags(between(16, 17), table(25)), []);
+  });
+
+  test('still reads the top of a closed league, which is a real thing there', () => {
+    // A conference leader against the side behind it is a genuine fixture even
+    // where the bottom of the table means nothing.
+    assert.deepEqual(detectStandingsFlags(between(1, 2), table(30)), ['title-decider']);
+    assert.deepEqual(detectStandingsFlags(between(2, 4), table(19)), ['top-of-table']);
   });
 
   test('says nothing when the competition has no table', () => {
@@ -144,6 +160,51 @@ describe('detectStandingsFlags', () => {
   test('says nothing for an event with no named teams at all', () => {
     // Races, tournaments and anything a source gave only a title.
     assert.deepEqual(detectStandingsFlags(makeEvent({ participants: [] }), table(30)), []);
+  });
+});
+
+describe('a league split into conferences', () => {
+  // MLS and the NBA arrive as two conference groups, each ranked from 1.
+  // Reading only the first left half the league invisible and made a season
+  // five games old look complete, which fired late-season flags in October.
+  const split: EspnStandings = {
+    children: [
+      { standings: { entries: [
+        { team: { displayName: 'East Top' }, stats: [{ name: 'rank', value: 1 }, { name: 'points', value: 60 }, { name: 'gamesPlayed', value: 30 }] },
+        { team: { displayName: 'East Bottom' }, stats: [{ name: 'rank', value: 2 }, { name: 'points', value: 10 }, { name: 'gamesPlayed', value: 30 }] },
+      ] } },
+      { standings: { entries: [
+        { team: { displayName: 'West Top' }, stats: [{ name: 'rank', value: 1 }, { name: 'points', value: 70 }, { name: 'gamesPlayed', value: 30 }] },
+        { team: { displayName: 'West Bottom' }, stats: [{ name: 'rank', value: 2 }, { name: 'points', value: 20 }, { name: 'gamesPlayed', value: 30 }] },
+      ] } },
+    ],
+  };
+
+  test('reads every conference, not just the first', () => {
+    assert.equal(parseStandings(split, 'Major League Soccer')?.rows.length, 4);
+  });
+
+  test('ranks across the whole league, since conference ranks restart at 1', () => {
+    // Two teams both ranked 1 in their own conference cannot both be first.
+    const parsed = parseStandings(split, 'Major League Soccer');
+    assert.deepEqual(parsed?.rows.map((r) => r.team), ['West Top', 'East Top', 'West Bottom', 'East Bottom']);
+    assert.deepEqual(parsed?.rows.map((r) => r.rank), [1, 2, 3, 4]);
+  });
+
+  test('leaves a single-group league ranked the way the feed ranked it', () => {
+    // The Premier League arrives as one group, already ordered on the
+    // tiebreaks the competition actually uses.
+    const single: EspnStandings = {
+      children: [{ standings: { entries: [
+        { team: { displayName: 'Second On Goal Difference' }, stats: [{ name: 'rank', value: 2 }, { name: 'points', value: 40 }] },
+        { team: { displayName: 'First On Goal Difference' }, stats: [{ name: 'rank', value: 1 }, { name: 'points', value: 40 }] },
+      ] } }],
+    };
+
+    assert.deepEqual(
+      parseStandings(single, 'Premier League')?.rows.map((r) => r.team),
+      ['First On Goal Difference', 'Second On Goal Difference'],
+    );
   });
 });
 

@@ -1,9 +1,9 @@
-import { describe, test } from 'node:test';
+﻿import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DateTime } from 'luxon';
-import { isQualifying, parseDates, parseDraw, parseIndex, stageOf } from '../src/sources/snooker.js';
+import { isPlaceholder, isQualifying, parseDates, parseDraw, parseIndex, stageOf } from '../src/sources/snooker.js';
 import type { Tournament } from '../src/sources/snooker.js';
 
 const fixture = (name: string): string =>
@@ -170,6 +170,56 @@ describe('qualifying tournaments', () => {
   });
 });
 
+describe('the amateur Q Tour', () => {
+  // Captured from a live Q Tour draw. The Q Tour is the amateur circuit players
+  // come through to reach the main tour. Unrecognised, its final scored like a
+  // ranking final and was the highest-rated event of the entire week.
+  const draw = parseDraw(fixture('draw-amateur-tour'));
+
+  test('counts as qualifying, so it is not scored like a ranking event', () => {
+    assert.equal(isQualifying('Asia Pacific Q Tour 4'), true);
+    assert.equal(isQualifying('Q School 2'), true);
+    assert.equal(isQualifying('Q-Tour Europe'), true);
+  });
+
+  test('does not drag a main-draw tournament down with it', () => {
+    for (const name of ['Northern Ireland Open', 'UK Championship', 'World Grand Prix']) {
+      assert.equal(isQualifying(name), false, name);
+    }
+  });
+
+  test('leaves out bracket slots nobody has reached yet', () => {
+    // The site publishes the whole bracket, so an unplayed final shows as
+    // "To be decided vs To be decided". That is not a fixture, and it was
+    // outranking every real event in the report.
+    assert.ok(draw.length > 0);
+    for (const match of draw) {
+      for (const player of match.players) {
+        assert.ok(!isPlaceholder(player), `a placeholder slot survived: ${player}`);
+      }
+    }
+  });
+
+  test('keeps a pairing where one side is still to be decided', () => {
+    // "S Murphy / M J Williams" names the two players one of whom will arrive.
+    // That is worth listing; an empty slot is not.
+    assert.equal(isPlaceholder('S Murphy / M J Williams'), false);
+    assert.equal(isPlaceholder('To be decided'), true);
+    assert.equal(isPlaceholder('TBA'), true);
+    assert.equal(isPlaceholder('bye'), true);
+  });
+
+  test('strips the amateur marker from player names', () => {
+    // Every player here is written "Andrew Siddons ( a )".
+    for (const match of draw) {
+      for (const player of match.players) {
+        assert.ok(!/\(\s*a\s*\)/i.test(player), `amateur marker left on: ${player}`);
+        assert.ok(player.trim().length > 0);
+      }
+    }
+  });
+});
+
 describe('a tournament linked under two labels', () => {
   // Captured from the live index on the day the qualifiers started. The same
   // event id is linked twice: as "Northern Ireland Open (q)" in the section for
@@ -237,9 +287,13 @@ describe('a tournament linked under two labels', () => {
   });
 
   test('does not turn a main-draw event into a qualifier by association', () => {
+    // Every marker a qualifier can carry, so that what is left really is
+    // main-draw. The Q Tour and Q School are the amateur circuit and count as
+    // qualifying too.
     for (const t of running) {
-      if (/\bqual|\(q\)/i.test(t.name)) continue;
+      if (/\bqual|\(q\)|\bq[\s-]?(tour|school)\b/i.test(t.name)) continue;
       assert.equal(t.qualifying, false, `${t.name} was marked as qualifying`);
     }
   });
 });
+

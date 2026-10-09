@@ -1,10 +1,11 @@
-import { describe, test } from 'node:test';
+﻿import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   LEAGUES,
   parseRacingScoreboard,
+  monthsIn,
   parseTeamScoreboard,
   parseTennisScoreboard,
 } from '../src/sources/espn.js';
@@ -63,6 +64,38 @@ describe('the league table', () => {
   });
 });
 
+describe('monthsIn', () => {
+  // ESPN stopped accepting a date range on its team endpoints and now answers
+  // 400, where a whole month still answers 200. A week is asked for as the one
+  // or two months it touches.
+  const window = (from: string, to: string): FetchRequest =>
+    request({ from: new Date(from), to: new Date(to) });
+
+  test('a week inside one month is a single request', () => {
+    assert.deepEqual(monthsIn(window('2026-10-09T00:00:00Z', '2026-10-16T00:00:00Z')), ['202610']);
+  });
+
+  test('a week straddling the turn of a month asks for both', () => {
+    // Asking for only the first would silently lose every fixture after the 31st.
+    assert.deepEqual(monthsIn(window('2026-10-29T00:00:00Z', '2026-11-05T00:00:00Z')), [
+      '202610',
+      '202611',
+    ]);
+  });
+
+  test('a week straddling new year gets the year right on both', () => {
+    assert.deepEqual(monthsIn(window('2026-12-29T00:00:00Z', '2027-01-05T00:00:00Z')), [
+      '202612',
+      '202701',
+    ]);
+  });
+
+  test('never repeats a month', () => {
+    const months = monthsIn(window('2026-10-01T00:00:00Z', '2026-10-31T00:00:00Z'));
+    assert.equal(new Set(months).size, months.length);
+  });
+});
+
 describe('parseTeamScoreboard', () => {
   const events = parseTeamScoreboard(fixture('soccer-eng1'), premierLeague);
 
@@ -70,7 +103,7 @@ describe('parseTeamScoreboard', () => {
     assert.ok(events.length > 0, 'no events parsed from a live capture');
   });
 
-  test('uses the rules.yaml spelling, not ESPN’s own league name', () => {
+  test('uses the rules.yaml spelling, not ESPNâ€™s own league name', () => {
     // ESPN calls it "English Premier League". Matching on that would need a
     // feed-specific alias in the user's table, which is exactly what we avoid.
     for (const event of events) assert.equal(event.competition, 'Premier League');
@@ -233,3 +266,4 @@ describe('parseTennisScoreboard', () => {
     }
   });
 });
+

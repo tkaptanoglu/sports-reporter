@@ -53,7 +53,11 @@ export function detectContextFlags(
   // A set, because a title decider can be reached two ways: from the calendar
   // via context.yaml, and from the table via the standings. Either is enough
   // and both together must not count twice.
-  for (const flag of detectStandingsFlags(event, tables.get(event.competition))) {
+  const relegates = (context.relegation?.[event.sport] ?? []).some((name) =>
+    containsWords(normalise(event.competition), normalise(name)),
+  );
+
+  for (const flag of detectStandingsFlags(event, tables.get(event.competition), relegates)) {
     flags.add(flag);
   }
 

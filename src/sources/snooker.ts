@@ -172,6 +172,11 @@ export function parseDraw(html: string): DrawMatch[] {
     const when = firstTimestamp(cells[cells.length - 1] ?? '');
     if (one === undefined || two === undefined || when === null) continue;
 
+    // An empty slot further up the bracket. "Winner of the other semi-final"
+    // is still worth listing, because at least one player is known; a slot
+    // with nobody in it at all is not a fixture.
+    if (isPlaceholder(one) || isPlaceholder(two)) continue;
+
     matches.push({ round, players: [stripSeed(one), stripSeed(two)], startsAt: when });
   }
 
@@ -231,7 +236,15 @@ export const snookerOrg: EventSource = {
 export function isQualifying(name: string): boolean {
   // The spelled-out forms and the site's own shorthand. The shorthand is what a
   // qualifier is called once it is under way, which is exactly when it matters.
-  return /\bqual(s|if\w*)?\b/i.test(name) || SHORTHAND.test(name);
+  //
+  // "Q Tour" and "Q School" are the amateur circuit players come through to
+  // reach the main tour. Unrecognised, a Q Tour final scored like a ranking
+  // final and topped an entire week of sport.
+  return (
+    /\bqual(s|if\w*)?\b/i.test(name) ||
+    /\bq[\s-]?(tour|school)\b/i.test(name) ||
+    SHORTHAND.test(name)
+  );
 }
 
 /**
@@ -311,7 +324,24 @@ const MONTHS: Record<string, number> = {
 
 /** Seedings are noise in a fixture list: "Ali Carter [21]" is Ali Carter. */
 function stripSeed(name: string): string {
-  return name.replace(/\s*\[[^\]]*\]\s*$/, '').trim();
+  return (
+    name
+      .replace(/\s*\[[^\]]*\]\s*$/, '')
+      // "( a )" marks an amateur, which every player on the Q Tour is.
+      .replace(/\s*\(\s*a\s*\)\s*$/i, '')
+      .trim()
+  );
+}
+
+/**
+ * A bracket slot nobody has reached yet.
+ *
+ * Distinct from a pairing like "S Murphy / M J Williams", which names the two
+ * players one of whom will arrive and is worth listing. A slot with nobody in
+ * it at all is not a fixture, and the draw publishes the whole bracket.
+ */
+export function isPlaceholder(name: string): boolean {
+  return /^(to be decided|t\.?b\.?[ad]\.?|bye|walk ?over)$/i.test(name.trim());
 }
 
 /** A session cell may list two start times. The first is when play begins. */

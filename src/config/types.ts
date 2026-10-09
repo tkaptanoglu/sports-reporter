@@ -164,6 +164,14 @@ export interface ContextConfig {
   /** Sport key to rules. Every phrase in a rule must appear in the event. */
   deciders?: Record<SportKey, string[][]>;
   /**
+   * Competitions anyone can actually be relegated from.
+   *
+   * Half the leagues here are closed: nobody goes down from MLS or the NBA, so
+   * a bottom-of-the-table fixture there is not a relegation anything. Only the
+   * competitions named here get the two bottom-of-the-table flags.
+   */
+  relegation?: Record<SportKey, string[]>;
+  /**
    * Qualifying sessions that largely settle the race that follows, at venues
    * where passing is so hard that grid position is most of the result. Same
    * shape as `deciders`: every phrase in a rule must appear in the event.

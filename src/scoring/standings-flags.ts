@@ -33,7 +33,19 @@ const TIERS = {
   relegation: { earliest: 0.75, share: 0.15 },
 };
 
-export function detectStandingsFlags(event: SportEvent, table: LeagueTable | undefined): ContextFlag[] {
+/**
+ * @param hasRelegation Whether anyone can actually go down from this
+ * competition. Half the leagues here are closed: nobody is relegated from MLS
+ * or the NBA, and flagging a bottom-of-the-table fixture there as a relegation
+ * decider is not a tuning question but simply false. Competitions with
+ * relegation are listed in context.yaml, and anything unlisted gets neither
+ * bottom-of-the-table flag.
+ */
+export function detectStandingsFlags(
+  event: SportEvent,
+  table: LeagueTable | undefined,
+  hasRelegation = false,
+): ContextFlag[] {
   if (table === undefined) return [];
 
   const rows = event.participants
@@ -60,13 +72,15 @@ export function detectStandingsFlags(event: SportEvent, table: LeagueTable | und
     flags.push('top-of-table');
   }
 
-  if (table.progress >= TIERS.relegation.earliest && everyone((r) => r.rank > dropCut)) {
-    flags.push('relegation-decider');
-  } else if (
-    table.progress >= TIERS.relegationBattle.earliest &&
-    everyone((r) => r.rank > battleCut)
-  ) {
-    flags.push('relegation-battle');
+  if (hasRelegation) {
+    if (table.progress >= TIERS.relegation.earliest && everyone((r) => r.rank > dropCut)) {
+      flags.push('relegation-decider');
+    } else if (
+      table.progress >= TIERS.relegationBattle.earliest &&
+      everyone((r) => r.rank > battleCut)
+    ) {
+      flags.push('relegation-battle');
+    }
   }
 
   return flags;

@@ -289,10 +289,32 @@ export const espnScoreboard: EventSource = {
     const leagues = LEAGUES.filter((l) => wanted.has(l.sport));
     if (leagues.length === 0) return [];
 
-    const range = `${yyyymmdd(request.from, request.timezone)}-${yyyymmdd(new Date(request.to.getTime() - 1), request.timezone)}`;
+    // ESPN stopped accepting a date range on its team endpoints: a range now
+    // answers 400 where a single day or a whole month still answers 200. A
+    // month covers a seven-day window in one or two requests rather than
+    // seven, so that is what a team league is asked for.
+    //
+    // Racing and tennis still accept a range, but return more without any date
+    // at all, because each returns the meeting or tournament nearest to now
+    // regardless. They are asked for nothing.
+    interface Job {
+      league: League;
+      /** yyyyMM, or null to ask for whatever is current. */
+      month: string | null;
+    }
 
-    const results = await mapWithLimit(leagues, 6, async (league) => {
-      const url = `${BASE}/${league.path}/scoreboard?dates=${range}&limit=300`;
+    const months = monthsIn(request);
+    const jobs: Job[] = leagues.flatMap((league) =>
+      league.layout === 'team'
+        ? months.map((month): Job => ({ league, month }))
+        : [{ league, month: null }],
+    );
+
+    const results = await mapWithLimit(jobs, 6, async ({ league, month }) => {
+      const url =
+        month === null
+          ? `${BASE}/${league.path}/scoreboard?limit=300`
+          : `${BASE}/${league.path}/scoreboard?dates=${month}&limit=300`;
 
       let body: EspnScoreboard;
       try {
@@ -348,8 +370,24 @@ function isFinished(status: EspnStatusType | undefined): boolean {
   return /COMPLETE|FINAL/i.test(status.name ?? '');
 }
 
-function yyyymmdd(when: Date, timezone: string): string {
-  return DateTime.fromJSDate(when).setZone(timezone).toFormat('yyyyMMdd');
+/**
+ * The months a window touches, as yyyyMM.
+ *
+ * Usually one. A week straddling the turn of a month needs both, and asking
+ * for only the first would silently lose every fixture after the 31st.
+ */
+export function monthsIn(request: FetchRequest): string[] {
+  const months: string[] = [];
+  let cursor = DateTime.fromJSDate(request.from).setZone(request.timezone).startOf('day');
+  const last = DateTime.fromJSDate(new Date(request.to.getTime() - 1)).setZone(request.timezone);
+
+  while (cursor <= last && months.length < 24) {
+    const month = cursor.toFormat('yyyyMM');
+    if (!months.includes(month)) months.push(month);
+    cursor = cursor.plus({ days: 1 });
+  }
+
+  return months;
 }
 
 /** Maps ESPN's session abbreviations onto rules.yaml competition names. */

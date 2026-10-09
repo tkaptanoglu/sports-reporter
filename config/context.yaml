@@ -156,3 +156,31 @@ decisive_qualifying:
     - [Singapore Grand Prix, Qualifying]
     - [Hungarian Grand Prix, Qualifying]
     - [Dutch Grand Prix, Qualifying]
+
+
+# ---------------------------------------------------------------------
+#  RELEGATION  ->  gates the two bottom-of-the-table flags
+# ---------------------------------------------------------------------
+#  Only these competitions can produce a relegation-battle or a
+#  relegation-decider. Everything else is treated as a closed league,
+#  which is the safe default: nobody goes down from MLS or the NBA, and
+#  calling a bottom-of-the-table fixture there a relegation decider is
+#  not a matter of taste, it is wrong.
+#
+#  Names are matched the same way as everywhere else, on whole words
+#  with accents folded, against the competition in the report.
+# ---------------------------------------------------------------------
+
+relegation:
+  football:
+    - Premier League
+    - La Liga
+    - Serie A
+    - Bundesliga
+    - Ligue 1
+    - Süper Lig
+    - Eredivisie
+    - Primeira Liga
+    - EFL Championship
+    - TFF 1. Lig
+    - TFF 2. Lig

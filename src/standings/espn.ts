@@ -38,7 +38,16 @@ export interface EspnStandings {
  * a flag rather than setting a score itself.
  */
 export function parseStandings(body: EspnStandings, competition: string): LeagueTable | null {
-  const entries = body.standings?.entries ?? body.children?.[0]?.standings?.entries ?? [];
+  // A league split into conferences arrives as several groups, each ranked from
+  // 1. Reading only the first left half the league invisible and made the
+  // season look twice as far along as it was, which fired late-season flags in
+  // October.
+  const groups =
+    body.children !== undefined && body.children.length > 0
+      ? body.children.map((child) => child.standings?.entries ?? [])
+      : [body.standings?.entries ?? []];
+
+  const entries = groups.flat();
   if (entries.length === 0) return null;
 
   const rows: TeamRow[] = [];
@@ -59,7 +68,17 @@ export function parseStandings(body: EspnStandings, competition: string): League
   }
 
   if (rows.length === 0) return null;
-  rows.sort((a, b) => a.rank - b.rank);
+
+  if (groups.length > 1) {
+    // Ranks restart in each conference, so they mean nothing across the whole
+    // league and have to be worked out again from the points.
+    rows.sort((a, b) => b.points - a.points || a.team.localeCompare(b.team));
+    rows.forEach((row, index) => {
+      row.rank = index + 1;
+    });
+  } else {
+    rows.sort((a, b) => a.rank - b.rank);
+  }
 
   const rounds = Math.max(1, 2 * (rows.length - 1));
   const played = Math.max(...rows.map((r) => r.played));
